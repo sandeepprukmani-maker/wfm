@@ -5,10 +5,13 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 AI_INTEGRATIONS_OPENAI_API_KEY = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
 AI_INTEGRATIONS_OPENAI_BASE_URL = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
 
-openai_client = OpenAI(
-    api_key=AI_INTEGRATIONS_OPENAI_API_KEY,
-    base_url=AI_INTEGRATIONS_OPENAI_BASE_URL
-)
+# Make OpenAI client optional - only initialize if API key is provided
+openai_client = None
+if AI_INTEGRATIONS_OPENAI_API_KEY:
+    openai_client = OpenAI(
+        api_key=AI_INTEGRATIONS_OPENAI_API_KEY,
+        base_url=AI_INTEGRATIONS_OPENAI_BASE_URL
+    )
 
 
 def is_rate_limit_error(exception):
@@ -30,6 +33,14 @@ def is_rate_limit_error(exception):
 )
 def generate_code(prompt: str, code_type: str = "python", context: dict = None) -> dict:
     """Generate SQL or Python code from natural language prompt."""
+    
+    if openai_client is None:
+        return {
+            "error": "OpenAI API key not configured. Set AI_INTEGRATIONS_OPENAI_API_KEY environment variable to use LLM features.",
+            "code": "",
+            "explanation": "LLM service unavailable",
+            "required_inputs": []
+        }
     
     context_str = ""
     if context:
@@ -78,6 +89,14 @@ Return a JSON object with:
 )
 def analyze_output(output: str, analysis_prompt: str) -> dict:
     """Analyze output from a node execution using LLM."""
+    
+    if openai_client is None:
+        return {
+            "error": "OpenAI API key not configured. Set AI_INTEGRATIONS_OPENAI_API_KEY environment variable to use LLM features.",
+            "answer": "LLM service unavailable",
+            "extracted_values": {},
+            "summary": "Cannot analyze without OpenAI API key"
+        }
     
     system_prompt = """You are an expert data analyst. Analyze the provided output and answer the user's question.
 

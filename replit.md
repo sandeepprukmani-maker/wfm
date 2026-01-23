@@ -1,69 +1,66 @@
-# Visual Workflow Platform
-
-A production-ready visual workflow orchestration platform that allows users to design, execute, and export complex automated workflows through a drag-and-drop interface.
+# FlowAuto - Visual Workflow Automation Platform
 
 ## Overview
 
-This platform enables users to:
-- Visually build workflows by connecting different node types
-- Execute workflows with automatic output passing between nodes
-- Use LLM-powered code generation for SQL and Python
-- Export workflows to executable Python code
-- Monitor execution status and logs in real-time
+FlowAuto is a visual workflow automation platform similar to n8n or Zapier. Users can create, edit, and execute automation workflows using a drag-and-drop canvas interface. The application features AI-powered workflow generation, multiple node types for different integrations (HTTP requests, databases, S3, Airflow), and execution logging.
 
-## Architecture
+## User Preferences
 
-### Backend (Flask + SQLite)
-- **server/app.py** - Main Flask application with REST API endpoints
-- **server/models.py** - SQLAlchemy models (Workflow, WorkflowExecution, NodeExecution)
-- **server/node_executor.py** - Executes individual nodes with variable substitution
-- **server/workflow_engine.py** - DAG-based workflow execution engine
-- **server/llm_service.py** - OpenAI integration for code generation
-- **server/exporter.py** - Export workflows to Python/YAML
+Preferred communication style: Simple, everyday language.
 
-### Frontend (React + React Flow)
-- **client/src/App.jsx** - Main application component
-- **client/src/store.js** - Zustand state management
-- **client/src/components/** - UI components (Canvas, Sidebar, NodePanel, etc.)
+## System Architecture
 
-## Node Types
+### Frontend Architecture
+- **Framework**: React 18 with TypeScript
+- **Routing**: Wouter (lightweight alternative to React Router)
+- **State Management**: TanStack Query for server state caching and synchronization
+- **UI Components**: shadcn/ui component library built on Radix UI primitives
+- **Styling**: Tailwind CSS with custom theme configuration and CSS variables
+- **Workflow Canvas**: ReactFlow for visual node-based editor with custom node types
+- **Build Tool**: Vite with path aliases (@/, @shared/, @assets/)
 
-1. **API Node** - HTTP requests (GET, POST, PUT, DELETE)
-2. **SQL Node** - SQLite database queries
-3. **Python Node** - Custom Python code execution
-4. **Decision Node** - Conditional branching (if/else)
-5. **Wait Node** - Delays and loop control
-6. **LLM Node** - AI-powered SQL/Python code generation
-7. **Airflow Node** - Trigger DAGs, check status, fetch logs
+### Backend Architecture
+- **Framework**: Express.js with TypeScript running on Node.js
+- **API Design**: RESTful endpoints under `/api/` prefix with Zod schema validation
+- **Database ORM**: Drizzle ORM with PostgreSQL
+- **Session Storage**: PostgreSQL-backed sessions via connect-pg-simple
+- **Build Process**: esbuild for server bundling, Vite for client
 
-## Output Passing
+### Data Storage
+- **Database**: PostgreSQL (required via DATABASE_URL environment variable)
+- **Schema Location**: `shared/schema.ts` contains all table definitions
+- **Tables**:
+  - `workflows`: Stores workflow definitions with nodes/edges as JSONB
+  - `executions`: Tracks workflow execution history and logs
+  - `conversations/messages`: Chat storage for AI integrations
 
-Nodes can reference outputs from previous nodes using the syntax:
-- `{{ node_id.field }}` - Access a specific field
-- `{{ node_id.rows[0].column }}` - Access nested data
+### Code Organization
+- `client/`: React frontend application
+- `server/`: Express backend with routes, storage layer, and integrations
+- `shared/`: Shared types, schemas, and route definitions used by both client and server
+- `server/replit_integrations/`: Pre-built modules for audio, chat, image, and batch processing
 
-## API Endpoints
+### Key Design Patterns
+- **Storage Interface**: Abstract `IStorage` interface in `server/storage.ts` enables swapping implementations
+- **Route Contracts**: Shared route definitions in `shared/routes.ts` ensure type safety between client and server
+- **Custom React Flow Nodes**: Node components in `client/src/components/CustomNodes.tsx` for different workflow step types
 
-- `GET /api/workflows` - List all workflows
-- `POST /api/workflows` - Create workflow
-- `GET /api/workflows/:id` - Get workflow
-- `PUT /api/workflows/:id` - Update workflow
-- `DELETE /api/workflows/:id` - Delete workflow
-- `POST /api/workflows/:id/execute` - Execute workflow
-- `GET /api/workflows/:id/export/python` - Export to Python
-- `POST /api/llm/generate` - Generate code with LLM
+## External Dependencies
 
-## Running the Application
+### AI Services
+- **OpenAI API**: Used for AI workflow generation and chat features
+- **Environment Variables**: 
+  - `AI_INTEGRATIONS_OPENAI_API_KEY`
+  - `AI_INTEGRATIONS_OPENAI_BASE_URL`
 
-The app runs on port 5000 with Flask serving the built React frontend.
+### Cloud Integrations
+- **AWS S3**: SDK included for S3 node functionality (`@aws-sdk/client-s3`)
+- **Database Connections**: mysql2 and mssql packages for SQL database nodes
 
-## Database
+### Database
+- **PostgreSQL**: Primary database via `DATABASE_URL` environment variable
+- **Drizzle Kit**: Database migration tool (`npm run db:push`)
 
-Uses SQLite (`workflow.db`) for storing:
-- Workflows (nodes, edges, metadata)
-- Execution history
-- Node execution logs and outputs
-
-## Recent Changes
-
-- January 21, 2026: Initial creation with all node types, LLM integration, and visual builder
+### Development
+- **Replit Plugins**: Runtime error overlay, cartographer, and dev banner for Replit environment
+- **ffmpeg**: Required system dependency for audio format conversion in voice features

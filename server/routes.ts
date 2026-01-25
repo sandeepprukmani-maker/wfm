@@ -83,7 +83,18 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // === AI GENERATION ===
+  // === AIRFLOW ACTIONS ===
+  app.post("/api/airflow/mark-failed", async (req, res) => {
+    const { dagId, runId, taskId } = req.body;
+    console.log(`Marking ${taskId ? `task ${taskId}` : `DAG ${dagId}`} as FAILED for run ${runId}`);
+    res.json({ success: true, message: "Marked as failed" });
+  });
+
+  app.post("/api/airflow/clear-task", async (req, res) => {
+    const { dagId, runId, taskId } = req.body;
+    console.log(`Clearing task ${taskId} for DAG ${dagId} (run ${runId})`);
+    res.json({ success: true, message: "Task cleared" });
+  });
   app.post(api.workflows.generate.path, async (req, res) => {
     const { prompt } = req.body;
 
@@ -94,30 +105,28 @@ export async function registerRoutes(
           {
             role: "system",
             content: `You are a workflow generator for Apache Airflow 2.7.3 and SQL Server.
+            CRITICAL: Break down the request into multiple nodes. ONE OPERATION PER NODE.
+            Nodes can pass values using double curly braces (e.g., {{dagRunId}}, {{queryResult}}).
+
             The available node types are:
-            - 'airflow_trigger': Trigger an Airflow DAG. Config: { dagId: string, conf?: object, logAssertion?: string, taskName?: string }. 
-              - logAssertion: A regex pattern to look for in the logs (e.g., "total count is 5000").
-              - taskName: The specific task ID within the Airflow DAG whose logs should be checked. This is mandatory if logAssertion is used.
-            - 'sql_query': Execute SQL. Config: { query: string, credentialId: number }. Supports variable substitution: {{dagRunId}}.
+            - 'airflow_trigger': ONLY triggers a DAG. Config: { dagId: string, conf?: object }. Output: dagRunId.
+            - 'airflow_log_check': Checks logs for a pattern. Config: { dagId: string, taskName?: string, logAssertion: string }. Usually follows a trigger.
+            - 'sql_query': Execute SQL. Config: { query: string, credentialId: number }. Output: queryResult.
             - 'python_script': Run Python code. Config: { code: string }.
-            - 'condition': Branching logic. Config: { threshold: number }.
+            - 'condition': Branching logic based on previous results. Config: { threshold: number, variable: string }.
             
             Return ONLY a JSON object with 'nodes' and 'edges' compatible with React Flow.
             Nodes should have id, position ({x, y}), data ({label, type, config}).
             Edges should have id, source, target.
 
-            CRITICAL: If the user asks to "check logs of task X in DAG Y for pattern Z", you MUST:
-            1. Create an 'airflow_trigger' node with dagId: "Y".
-            2. Set config.logAssertion to "Z".
-            3. Set config.taskName to "X".
-            4. Connect this node to all downstream nodes that should execute only if the log check passes.
+            Example: If user says "Trigger DAG A and check logs for 'Success'", create TWO nodes: 
+            1. 'airflow_trigger' node.
+            2. 'airflow_log_check' node connected to the trigger.
             `
           },
           {
             role: "user",
-            content: `Scenario: ${prompt}.
-            
-            Follow the user's scenario precisely. Ensure 'taskName' and 'logAssertion' are both populated if a specific task log check is mentioned.`
+            content: `Scenario: ${prompt}.`
           }
         ],
         response_format: { type: "json_object" }
@@ -172,6 +181,22 @@ export async function registerRoutes(
       const nodes = (workflow.nodes as any[]) || [];
       const executionContext: Record<string, any> = {};
       
+      // PHASE 1: PRE-EXECUTION (Pause DAGs and Wait)
+      const airflowNodes = nodes.filter((n: any) => n.data.type === 'airflow_trigger' || n.data.type === 'airflow_log_check');
+      const uniqueDagIds = [...new Set(airflowNodes.map((n: any) => n.data.config.dagId).filter(Boolean))];
+
+      if (uniqueDagIds.length > 0) {
+        logs.push({ timestamp: new Date(), level: 'INFO', message: `Pre-execution: Pausing DAGs [${uniqueDagIds.join(', ')}]...` });
+        
+        for (const dagId of uniqueDagIds) {
+          logs.push({ timestamp: new Date(), level: 'INFO', message: `Pausing DAG: ${dagId}` });
+          // Simulation: Pause DAG and wait for active runs
+          logs.push({ timestamp: new Date(), level: 'INFO', message: `Checking for active runs for ${dagId}...` });
+          await new Promise(resolve => setTimeout(resolve, 500));
+          logs.push({ timestamp: new Date(), level: 'INFO', message: `No active runs for ${dagId}. Proceeding.` });
+        }
+      }
+
       for (const node of nodes) {
         await new Promise(r => setTimeout(r, 1000));
         logs.push({ 
@@ -182,7 +207,6 @@ export async function registerRoutes(
 
         if (node.data.type === 'airflow_trigger') {
           const dagId = node.data.config.dagId;
-          const taskName = node.data.config.taskName || 'default_task';
           const dagRunId = `run_${Math.random().toString(36).substring(7)}`;
           
           if (!executionContext['dagRunIds']) executionContext['dagRunIds'] = [];
@@ -190,50 +214,58 @@ export async function registerRoutes(
           executionContext['dagRunId'] = dagRunId;
           
           logs.push({ timestamp: new Date(), level: 'INFO', message: `Triggering Airflow DAG: ${dagId}...` });
-          
-          // Simulation of success and log check
-          const logAssertion = node.data.config?.logAssertion;
-          if (logAssertion) {
-            logs.push({ timestamp: new Date(), level: 'INFO', message: `Checking logs for task '${taskName}' in DAG '${dagId}'...` });
-            
-            // Simulated match for the specific scenario
-            const mockLogs = [
-              `INFO: Task ${taskName} started`,
-              "SUCCESS: total count is 5000",
-              `INFO: Task ${taskName} completed`
-            ];
-            
-            const pattern = new RegExp(logAssertion, 'i');
-            const found = mockLogs.some(l => pattern.test(l));
-            
-            logs.push({ 
-              timestamp: new Date(), 
-              level: found ? 'INFO' : 'ERROR', 
-              message: `Log Assertion [${logAssertion}]: ${found ? 'PASSED' : 'FAILED'}` 
-            });
-            
-            if (!found) {
-              logs.push({ timestamp: new Date(), level: 'ERROR', message: `Dependency failed. Skipping downstream nodes.` });
-              continue; 
-            }
-          }
-
           logs.push({ timestamp: new Date(), level: 'INFO', message: `DAG ${dagId} successful. Run ID: ${dagRunId}` });
+        }
+
+        if (node.data.type === 'airflow_log_check') {
+          const dagId = node.data.config.dagId || executionContext['dagId'];
+          const taskName = node.data.config.taskName || 'entire_dag';
+          const logAssertion = node.data.config.logAssertion;
+
+          logs.push({ timestamp: new Date(), level: 'INFO', message: `Checking logs for ${taskName === 'entire_dag' ? 'entire DAG' : `task '${taskName}'`} in DAG '${dagId}'...` });
+          
+          // Simulation of log monitoring (wait for latest logs)
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          const mockLogs = [
+            `INFO: Task ${taskName} started`,
+            "SUCCESS: total count is 5000",
+            `INFO: Task ${taskName} completed`
+          ];
+          
+          const pattern = new RegExp(logAssertion, 'i');
+          const found = mockLogs.some(l => pattern.test(l));
+          
+          logs.push({ 
+            timestamp: new Date(), 
+            level: found ? 'INFO' : 'ERROR', 
+            message: `Assertion [${logAssertion}] on ${taskName}: ${found ? 'PASSED' : 'FAILED'}` 
+          });
+          
+          if (!found) {
+            logs.push({ timestamp: new Date(), level: 'ERROR', message: `Assertion failed for ${taskName}. skipping downstream.` });
+            continue;
+          }
         }
 
         if (node.data.type === 'sql_query') {
           let query = node.data.config.query || "";
           // Variable substitution
-          if (query.includes('{{dagRunId}}')) {
-            const actualId = executionContext['dagRunId'] || 'N/A';
-            query = query.replace(/\{\{dagRunId\}\}/g, actualId);
-            logs.push({ timestamp: new Date(), level: 'INFO', message: `Injected variable: dagRunId = ${actualId}` });
+          if (query.includes('{{')) {
+            for (const [key, value] of Object.entries(executionContext)) {
+              const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+              if (typeof value === 'string' || typeof value === 'number') {
+                query = query.replace(regex, String(value));
+              }
+            }
+            logs.push({ timestamp: new Date(), level: 'INFO', message: `Resolved Query: ${query}` });
           }
           
           logs.push({ timestamp: new Date(), level: 'INFO', message: `Running SQL: ${query}` });
           
           // Simulation of record count
           const recordCount = Math.floor(Math.random() * 200); // Mocking result
+          executionContext['queryResult'] = recordCount;
           executionContext['lastRecordCount'] = recordCount;
           logs.push({ timestamp: new Date(), level: 'INFO', message: `Query result: ${recordCount} records found.` });
           

@@ -65,12 +65,27 @@ export type InsertCredential = z.infer<typeof insertCredentialSchema>;
 export type Execution = typeof executions.$inferSelect;
 
 // Node types for the visual editor
-export type WorkflowNodeType = 'airflow_trigger' | 'sql_query' | 'python_script';
+export type WorkflowNodeType = 'airflow_trigger' | 'airflow_log_check' | 'sql_query' | 'python_script' | 'condition';
+
+export interface AirflowAssertion {
+  taskName?: string;
+  logAssertion: string;
+}
 
 export interface WorkflowNodeData {
   label: string;
   type: WorkflowNodeType;
-  config: Record<string, any>;
+  config: {
+    dagId?: string;
+    assertions?: AirflowAssertion[];
+    // Deprecated but kept for compatibility
+    taskName?: string;
+    logAssertion?: string;
+    query?: string;
+    code?: string;
+    threshold?: number;
+    [key: string]: any;
+  };
 }
 
 // Prompt generation request

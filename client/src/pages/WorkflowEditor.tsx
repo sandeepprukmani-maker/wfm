@@ -26,7 +26,9 @@ import {
   ChevronRight,
   GitBranch,
   Search as SearchIcon,
-  Download
+  Download,
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +52,7 @@ import { Handle, Position } from 'reactflow';
 const NodeIcon = ({ type, className }: { type: string, className?: string }) => {
   switch(type) {
     case 'airflow_trigger': return <Cloud className={cn("w-5 h-5", className)} />;
+    case 'airflow_log_check': return <SearchIcon className={cn("w-5 h-5", className)} />;
     case 'sql_query': return <Database className={cn("w-5 h-5", className)} />;
     case 'python_script': return <Terminal className={cn("w-5 h-5", className)} />;
     case 'condition': return <GitBranch className={cn("w-5 h-5", className)} />;
@@ -58,7 +61,8 @@ const NodeIcon = ({ type, className }: { type: string, className?: string }) => 
 };
 
 const CustomNode = ({ data, type, selected }: any) => {
-  const isAirflow = type === 'airflow_trigger';
+  const isAirflowTrigger = type === 'airflow_trigger';
+  const isAirflowLog = type === 'airflow_log_check';
   const isSQL = type === 'sql_query';
   const isPython = type === 'python_script';
   const isCondition = type === 'condition';
@@ -74,7 +78,7 @@ const CustomNode = ({ data, type, selected }: any) => {
         <div className="flex items-center justify-between mb-3">
           <div className={cn(
             "p-2 rounded-xl",
-            isAirflow ? "bg-blue-500/10 text-blue-500" :
+            isAirflowTrigger || isAirflowLog ? "bg-blue-500/10 text-blue-500" :
             isSQL ? "bg-green-500/10 text-green-500" :
             isCondition ? "bg-purple-500/10 text-purple-500" :
             "bg-yellow-500/10 text-yellow-500"
@@ -89,14 +93,15 @@ const CustomNode = ({ data, type, selected }: any) => {
         <div className="space-y-1">
           <div className="font-bold text-sm tracking-tight truncate">{data.label}</div>
           <div className="text-[11px] text-muted-foreground truncate opacity-70">
-            {isAirflow ? `DAG: ${data.config?.dagId || 'unset'}` :
+            {isAirflowTrigger ? `Trigger DAG: ${data.config?.dagId || 'unset'}` :
+             isAirflowLog ? `Check Log: ${data.config?.logAssertion || 'unset'}` :
              isSQL ? 'Database Query' : 
-             isCondition ? `Threshold: ${data.config?.threshold || 100}` :
+             isCondition ? `Variable: ${data.config?.variable || 'lastRecordCount'}` :
              'Custom Script'}
           </div>
-          {isAirflow && data.config?.logAssertion && (
-            <div className="text-[9px] text-blue-500/70 font-mono truncate mt-1">
-              Assert: "{data.config.logAssertion}"
+          {isAirflowLog && data.config?.logAssertion && (
+            <div className="text-[9px] text-blue-500/70 font-mono truncate border-l-2 border-blue-500/30 pl-1 mt-1">
+              {data.config.taskName ? `${data.config.taskName}: ` : ''}"{data.config.logAssertion}"
             </div>
           )}
         </div>
@@ -120,6 +125,7 @@ const CustomNode = ({ data, type, selected }: any) => {
 
 const nodeTypes = {
   airflow_trigger: CustomNode,
+  airflow_log_check: CustomNode,
   sql_query: CustomNode,
   python_script: CustomNode,
   condition: CustomNode,
@@ -303,6 +309,9 @@ export default function WorkflowEditor() {
               <Cloud className="w-3 h-3 text-blue-400" /> Airflow Trigger
             </div>
             <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-muted p-1 rounded">
+              <SearchIcon className="w-3 h-3 text-blue-400" /> Airflow Log Check
+            </div>
+            <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-muted p-1 rounded">
               <Database className="w-3 h-3 text-green-400" /> SQL Query
             </div>
             <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-muted p-1 rounded">
@@ -349,7 +358,7 @@ export default function WorkflowEditor() {
               </div>
 
               {selectedNode?.data.type === 'airflow_trigger' && (
-                <>
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium">DAG ID</label>
                     <Input 
@@ -359,17 +368,64 @@ export default function WorkflowEditor() {
                       })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Log Assertion (Pattern to find)</label>
+                  
+                  <div className="pt-2 border-t space-y-2">
+                    <label className="text-[10px] uppercase font-bold text-muted-foreground">Manual Actions</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-[10px] h-8"
+                        onClick={() => apiRequest("POST", "/api/airflow/mark-failed", { dagId: selectedNode.data.config.dagId })}
+                      >
+                        Mark Failed
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-[10px] h-8"
+                        onClick={() => apiRequest("POST", "/api/airflow/clear-task", { dagId: selectedNode.data.config.dagId })}
+                      >
+                        Clear Task
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedNode?.data.type === 'airflow_log_check' && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium">DAG ID (Optional)</label>
                     <Input 
-                      placeholder="e.g. SUCCESS: All records processed"
+                      placeholder="Inherits from trigger if empty"
+                      value={selectedNode?.data.config?.dagId || ''} 
+                      onChange={(e) => updateNodeData(selectedNode!.id, { 
+                        config: { ...selectedNode.data.config, dagId: e.target.value } 
+                      })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium">Task ID (Optional)</label>
+                    <Input 
+                      placeholder="e.g. process_data"
+                      value={selectedNode?.data.config?.taskName || ''} 
+                      onChange={(e) => updateNodeData(selectedNode!.id, { 
+                        config: { ...selectedNode.data.config, taskName: e.target.value } 
+                      })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium">Log Pattern</label>
+                    <Input 
+                      placeholder="e.g. Success: 5000 rows"
                       value={selectedNode?.data.config?.logAssertion || ''} 
                       onChange={(e) => updateNodeData(selectedNode!.id, { 
                         config: { ...selectedNode.data.config, logAssertion: e.target.value } 
                       })}
                     />
                   </div>
-                </>
+                </div>
               )}
 
               {selectedNode?.data.type === 'sql_query' && (

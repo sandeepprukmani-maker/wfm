@@ -1,13 +1,12 @@
 ## Packages
-reactflow | The core library for the visual workflow editor canvas
-framer-motion | For smooth transitions, modal animations, and panel slides
-date-fns | Formatting timestamps in the execution logs
-clsx | Utility for constructing className strings conditionally
-tailwind-merge | Utility for merging Tailwind classes safely
+reactflow | The library for building node-based workflow editors
+framer-motion | For smooth animations and transitions
+date-fns | For formatting dates in logs and lists
+lucide-react | For beautiful icons (already in base, but listing for completeness)
+clsx | For conditional class names
+tailwind-merge | For merging tailwind classes
 
 ## Notes
-Tailwind Config - extend fontFamily:
-fontFamily: {
-  sans: ["Inter", "sans-serif"],
-  mono: ["JetBrains Mono", "monospace"],
-}
+The workflow editor uses React Flow.
+Workflows are stored with 'nodes' and 'edges' JSON fields.
+Execution logs are streamed or polled from the backend.

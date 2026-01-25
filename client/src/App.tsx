@@ -3,17 +3,35 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import Home from "@/pages/Home";
-import WorkflowEditor from "@/pages/WorkflowEditor";
 import NotFound from "@/pages/not-found";
+import { Layout } from "@/components/Layout";
+
+// Pages
+import Dashboard from "@/pages/Dashboard";
+import WorkflowList from "@/pages/WorkflowList";
+import WorkflowEditor from "@/pages/WorkflowEditor";
+import Credentials from "@/pages/Credentials";
+import Executions from "@/pages/Executions";
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/workflow/:id" component={WorkflowEditor} />
-      <Route component={NotFound} />
-    </Switch>
+    <Layout>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/workflows" component={WorkflowList} />
+        <Route path="/workflows/new" component={() => {
+           // Redirect logic handled in list component for simplicity or just render list
+           // Ideally new could be a modal on list page. We implemented it as a modal.
+           // So just routing /workflows/new to list page with auto-open modal would be complex.
+           // For this MVP, let's keep it simple: /workflows handles creation via modal.
+           return <WorkflowList />
+        }} />
+        <Route path="/workflows/:id" component={WorkflowEditor} />
+        <Route path="/credentials" component={Credentials} />
+        <Route path="/executions" component={Executions} />
+        <Route component={NotFound} />
+      </Switch>
+    </Layout>
   );
 }
 
@@ -21,8 +39,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Router />
         <Toaster />
+        <Router />
       </TooltipProvider>
     </QueryClientProvider>
   );

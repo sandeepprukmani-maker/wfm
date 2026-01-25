@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertWorkflowSchema, insertExecutionSchema, generateWorkflowSchema, workflows, executions } from './schema';
+import { insertWorkflowSchema, insertCredentialSchema, workflows, credentials, executions } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -60,22 +60,53 @@ export const api = {
     generate: {
       method: 'POST' as const,
       path: '/api/workflows/generate',
-      input: generateWorkflowSchema,
+      input: z.object({ prompt: z.string() }),
       responses: {
         200: z.object({
           nodes: z.array(z.any()),
           edges: z.array(z.any()),
-          name: z.string().optional(),
-          description: z.string().optional(),
         }),
-        500: errorSchemas.internal,
       },
     },
     execute: {
       method: 'POST' as const,
       path: '/api/workflows/:id/execute',
       responses: {
-        200: z.custom<typeof executions.$inferSelect>(), // Returns the execution record
+        201: z.custom<typeof executions.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+    exportPython: {
+      method: 'GET' as const,
+      path: '/api/workflows/:id/export',
+      responses: {
+        200: z.object({ code: z.string() }),
+        404: errorSchemas.notFound,
+      },
+    }
+  },
+  credentials: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/credentials',
+      responses: {
+        200: z.array(z.custom<typeof credentials.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/credentials',
+      input: insertCredentialSchema,
+      responses: {
+        201: z.custom<typeof credentials.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/credentials/:id',
+      responses: {
+        204: z.void(),
         404: errorSchemas.notFound,
       },
     },
@@ -83,7 +114,8 @@ export const api = {
   executions: {
     list: {
       method: 'GET' as const,
-      path: '/api/workflows/:id/executions',
+      path: '/api/executions',
+      input: z.object({ workflowId: z.coerce.number().optional() }).optional(),
       responses: {
         200: z.array(z.custom<typeof executions.$inferSelect>()),
       },
@@ -96,7 +128,7 @@ export const api = {
         404: errorSchemas.notFound,
       },
     },
-  },
+  }
 };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

@@ -1,12 +1,10 @@
-import { db } from "./db";
-import {
-  workflows,
-  executions,
-  type Workflow,
-  type InsertWorkflow,
-  type Execution,
-  type InsertExecution,
+import { 
+  workflows, credentials, executions,
+  type Workflow, type InsertWorkflow,
+  type Credential, type InsertCredential,
+  type Execution
 } from "@shared/schema";
+import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
@@ -14,17 +12,23 @@ export interface IStorage {
   getWorkflows(): Promise<Workflow[]>;
   getWorkflow(id: number): Promise<Workflow | undefined>;
   createWorkflow(workflow: InsertWorkflow): Promise<Workflow>;
-  updateWorkflow(id: number, workflow: Partial<InsertWorkflow>): Promise<Workflow>;
+  updateWorkflow(id: number, workflow: Partial<InsertWorkflow>): Promise<Workflow | undefined>;
   deleteWorkflow(id: number): Promise<void>;
 
+  // Credentials
+  getCredentials(): Promise<Credential[]>;
+  createCredential(credential: InsertCredential): Promise<Credential>;
+  deleteCredential(id: number): Promise<void>;
+
   // Executions
-  getExecutions(workflowId: number): Promise<Execution[]>;
+  getExecutions(workflowId?: number): Promise<Execution[]>;
   getExecution(id: number): Promise<Execution | undefined>;
-  createExecution(execution: InsertExecution): Promise<Execution>;
-  updateExecution(id: number, status: string, logs: any[], finishedAt?: Date): Promise<Execution>;
+  createExecution(workflowId: number): Promise<Execution>;
+  updateExecution(id: number, status: string, logs: any[]): Promise<Execution>;
 }
 
 export class DatabaseStorage implements IStorage {
+  // Workflow methods
   async getWorkflows(): Promise<Workflow[]> {
     return await db.select().from(workflows).orderBy(desc(workflows.updatedAt));
   }
@@ -35,51 +39,80 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWorkflow(insertWorkflow: InsertWorkflow): Promise<Workflow> {
-    const [workflow] = await db
-      .insert(workflows)
-      .values(insertWorkflow)
-      .returning();
+    const [workflow] = await db.insert(workflows).values(insertWorkflow).returning();
     return workflow;
   }
 
-  async updateWorkflow(id: number, update: Partial<InsertWorkflow>): Promise<Workflow> {
-    const [workflow] = await db
+  async updateWorkflow(id: number, updates: Partial<InsertWorkflow>): Promise<Workflow | undefined> {
+    const [updated] = await db
       .update(workflows)
-      .set({ ...update, updatedAt: new Date() })
+      .set({ ...updates, updatedAt: new Date() })
       .where(eq(workflows.id, id))
       .returning();
-    return workflow;
+    return updated;
   }
 
   async deleteWorkflow(id: number): Promise<void> {
     await db.delete(workflows).where(eq(workflows.id, id));
   }
 
-  async getExecutions(workflowId: number): Promise<Execution[]> {
-    return await db
-      .select()
-      .from(executions)
-      .where(eq(executions.workflowId, workflowId))
-      .orderBy(desc(executions.startedAt));
+  // Credential methods
+  async getCredentials(): Promise<Credential[]> {
+    return await db.select().from(credentials).orderBy(desc(credentials.createdAt));
+  }
+
+  async createCredential(insertCredential: InsertCredential): Promise<Credential> {
+    const [credential] = await db.insert(credentials).values(insertCredential).returning();
+    return credential;
+  }
+
+  async deleteCredential(id: number): Promise<void> {
+    await db.delete(credentials).where(eq(credentials.id, id));
+  }
+
+  // Execution methods
+  async getExecutions(workflowId?: number): Promise<Execution[]> {
+    let results;
+    if (workflowId) {
+      results = await db.select().from(executions).where(eq(executions.workflowId, workflowId)).orderBy(desc(executions.startedAt));
+    } else {
+      results = await db.select().from(executions).orderBy(desc(executions.startedAt));
+    }
+    
+    return results.map(exec => ({
+      ...exec,
+      logs: typeof exec.logs === 'string' ? JSON.parse(exec.logs) : exec.logs
+    }));
   }
 
   async getExecution(id: number): Promise<Execution | undefined> {
     const [execution] = await db.select().from(executions).where(eq(executions.id, id));
+    if (!execution) return undefined;
+    
+    return {
+      ...execution,
+      logs: typeof execution.logs === 'string' ? JSON.parse(execution.logs) : execution.logs
+    };
+  }
+
+  async createExecution(workflowId: number): Promise<Execution> {
+    const [execution] = await db.insert(executions).values({
+      workflowId,
+      status: "pending",
+      logs: JSON.stringify([]),
+      startedAt: new Date(),
+    }).returning();
     return execution;
   }
 
-  async createExecution(insertExecution: InsertExecution): Promise<Execution> {
-    const [execution] = await db
-      .insert(executions)
-      .values(insertExecution)
-      .returning();
-    return execution;
-  }
-
-  async updateExecution(id: number, status: string, logs: any[], finishedAt?: Date): Promise<Execution> {
+  async updateExecution(id: number, status: string, logs: any[]): Promise<Execution> {
+    const updates: any = { status, logs: JSON.stringify(logs) };
+    if (status === "completed" || status === "failed") {
+      updates.completedAt = new Date();
+    }
     const [execution] = await db
       .update(executions)
-      .set({ status, logs, finishedAt })
+      .set(updates)
       .where(eq(executions.id, id))
       .returning();
     return execution;

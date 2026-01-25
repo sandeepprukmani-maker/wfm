@@ -1,37 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-@import 'reactflow/dist/style.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 263.4 70% 50.4%;
+  --background: 224 71% 4%;
+  --foreground: 213 31% 91%;
+  
+  --card: 224 71% 4%;
+  --card-foreground: 213 31% 91%;
+  
+  --popover: 224 71% 4%;
+  --popover-foreground: 213 31% 91%;
+  
+  --primary: 262 83% 58%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 240 4.9% 83.9%;
+  
+  --secondary: 222 47% 11%;
+  --secondary-foreground: 210 40% 98%;
+  
+  --muted: 215 27% 17%;
+  --muted-foreground: 215 20% 65%;
+  
+  --accent: 216 34% 17%;
+  --accent-foreground: 210 40% 98%;
+  
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 210 40% 98%;
+  
+  --border: 216 34% 17%;
+  --input: 216 34% 17%;
+  --ring: 262 83% 58%;
+  
   --radius: 0.75rem;
-
-  /* Custom Node Colors */
-  --node-trigger: 142 71% 45%;
-  --node-http: 217 91% 60%;
-  --node-logic: 35 92% 51%;
-  --node-transform: 270 95% 65%;
 }
 
 @layer base {
@@ -42,34 +44,26 @@
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
   }
-  code, pre, .font-mono {
+  code, pre {
     font-family: 'JetBrains Mono', monospace;
   }
 }
 
-/* React Flow Customizations */
+/* React Flow Customization */
 .react-flow__node {
-  @apply rounded-xl border border-border bg-card shadow-lg;
+  @apply rounded-xl border border-border bg-card shadow-lg transition-shadow hover:shadow-primary/20 hover:border-primary/50;
 }
 
 .react-flow__handle {
-  @apply w-3 h-3 bg-muted-foreground border-2 border-background;
-}
-
-.react-flow__handle:hover {
-  @apply bg-primary border-primary transition-colors;
+  @apply w-3 h-3 bg-primary border-2 border-background;
 }
 
 .react-flow__controls {
-  @apply bg-card border border-border shadow-xl rounded-lg overflow-hidden p-1;
+  @apply bg-card border border-border shadow-xl rounded-lg overflow-hidden;
 }
 
 .react-flow__controls-button {
-  @apply border-none bg-transparent text-foreground hover:bg-muted transition-colors rounded;
-}
-
-.react-flow__attribution {
-  @apply hidden;
+  @apply bg-card border-b border-border text-foreground hover:bg-muted transition-colors;
 }
 
 /* Custom Scrollbar */
@@ -78,8 +72,21 @@
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  @apply bg-transparent;
+  @apply bg-background;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
+  @apply bg-muted rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground;
+}
+
+/* Animations */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out forwards;
 }

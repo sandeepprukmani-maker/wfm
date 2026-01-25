@@ -1,53 +1,78 @@
-import { Zap, Globe, GitBranch, Cpu, Database, Cloud, Wind } from 'lucide-react';
+import { Link, useLocation } from "wouter";
+import { 
+  LayoutDashboard, 
+  Workflow, 
+  Key, 
+  Activity, 
+  Settings,
+  LogOut
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
-const DraggableNode = ({ type, label, icon: Icon, colorClass }: { type: string, label: string, icon: any, colorClass: string }) => {
-  const onDragStart = (event: React.DragEvent, nodeType: string) => {
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.effectAllowed = 'move';
-  };
+export function Sidebar() {
+  const [location] = useLocation();
+  // const { logout, user } = useAuth();
+  const logout = () => window.location.href = "/api/logout";
+  const user = { firstName: "Admin", email: "admin@workflow.local", profileImageUrl: null };
+
+  const navItems = [
+    { icon: LayoutDashboard, label: "Overview", href: "/" },
+    { icon: Workflow, label: "Workflows", href: "/workflows" },
+    { icon: Activity, label: "Executions", href: "/executions" },
+    { icon: Key, label: "Credentials", href: "/credentials" },
+  ];
 
   return (
-    <div 
-      className="flex items-center gap-3 p-3 mb-3 bg-muted/30 hover:bg-muted border border-border/50 hover:border-border rounded-lg cursor-grab active:cursor-grabbing transition-all duration-200 group"
-      onDragStart={(event) => onDragStart(event, type)}
-      draggable
-    >
-      <div className={`p-2 rounded-md ${colorClass} bg-opacity-10 group-hover:bg-opacity-20 transition-colors`}>
-        <Icon className={`w-4 h-4 ${colorClass.replace('bg-', 'text-')}`} />
-      </div>
-      <div>
-        <div className="text-sm font-medium text-foreground">{label}</div>
-        <div className="text-[10px] text-muted-foreground">Drag to add</div>
-      </div>
-    </div>
-  );
-};
-
-export default function Sidebar() {
-  return (
-    <aside className="w-64 border-r border-border bg-card/50 backdrop-blur-sm p-4 flex flex-col gap-6 overflow-y-auto">
-      <div>
-        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Core Nodes</h2>
-        <DraggableNode type="trigger" label="Trigger" icon={Zap} colorClass="bg-emerald-500" />
-        <DraggableNode type="http" label="HTTP Request" icon={Globe} colorClass="bg-blue-500" />
-        <DraggableNode type="logic" label="Logic / Branch" icon={GitBranch} colorClass="bg-orange-500" />
-        <DraggableNode type="transform" label="Transform Data" icon={Cpu} colorClass="bg-purple-500" />
-      </div>
-
-      <div>
-        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">Integrations</h2>
-        <DraggableNode type="s3" label="AWS S3" icon={Cloud} colorClass="bg-amber-500" />
-        <DraggableNode type="db" label="Database (SQL)" icon={Database} colorClass="bg-indigo-500" />
-        <DraggableNode type="airflow" label="Airflow" icon={Wind} colorClass="bg-sky-500" />
-      </div>
-      
-      <div className="mt-auto pt-6">
-        <div className="p-4 rounded-xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
-          <h3 className="text-sm font-semibold text-primary mb-1">API Testing</h3>
-          <p className="text-xs text-muted-foreground">
-            Enter a Swagger URL in settings and use AI prompts to generate test cases.
-          </p>
+    <aside className="w-64 border-r border-border bg-card flex flex-col h-screen fixed left-0 top-0 z-10">
+      <div className="p-6 border-b border-border flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+          <Workflow className="text-white w-5 h-5" />
         </div>
+        <h1 className="font-bold text-xl tracking-tight">Orchestrate</h1>
+      </div>
+
+      <nav className="flex-1 p-4 space-y-1">
+        {navItems.map((item) => {
+          const isActive = location === item.href || (item.href !== '/' && location.startsWith(item.href));
+          return (
+            <Link key={item.href} href={item.href} className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group",
+              isActive 
+                ? "bg-primary/10 text-primary shadow-sm" 
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}>
+              <item.icon className={cn(
+                "w-5 h-5 transition-colors",
+                isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+              )} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="p-4 border-t border-border">
+        <div className="bg-muted/30 rounded-xl p-4 flex items-center gap-3 mb-2">
+          {user?.profileImageUrl ? (
+            <img src={user.profileImageUrl} alt="User" className="w-10 h-10 rounded-full bg-background" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+               <span className="text-primary font-bold">{user?.email?.[0]?.toUpperCase()}</span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{user?.firstName || 'User'}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => logout()}
+          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </button>
       </div>
     </aside>
   );

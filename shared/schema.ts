@@ -1,62 +1,79 @@
-import { pgTable, text, serial, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, blob } from "drizzle-orm/sqlite-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// === WORKFLOWS ===
-export const workflows = pgTable("workflows", {
-  id: serial("id").primaryKey(),
+// === WORKFLOW DEFINITIONS ===
+export const workflows = sqliteTable("workflows", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   description: text("description"),
-  swaggerUrl: text("swagger_url"), // Added for API testing
-  nodes: jsonb("nodes").$type<any[]>().notNull().default([]),
-  edges: jsonb("edges").$type<any[]>().notNull().default([]),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  nodes: text("nodes", { mode: 'json' }).notNull().default('[]'), // React Flow nodes
+  edges: text("edges", { mode: 'json' }).notNull().default('[]'), // React Flow edges
+  createdAt: integer("created_at", { mode: 'timestamp' }).defaultNow(),
+  updatedAt: integer("updated_at", { mode: 'timestamp' }).defaultNow(),
+});
+
+// === CREDENTIALS ===
+export const credentials = sqliteTable("credentials", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  type: text("type").notNull(), // 'airflow' | 'mssql'
+  data: text("data", { mode: 'json' }).notNull(), // Encrypted or structured connection info
+  createdAt: integer("created_at", { mode: 'timestamp' }).defaultNow(),
 });
 
 // === EXECUTIONS ===
-export const executions = pgTable("executions", {
-  id: serial("id").primaryKey(),
-  workflowId: serial("workflow_id").references(() => workflows.id),
-  status: text("status").notNull(), // 'pending', 'running', 'completed', 'failed'
-  logs: jsonb("logs").$type<any[]>(), // Array of execution steps/logs
-  startedAt: timestamp("started_at").defaultNow(),
-  finishedAt: timestamp("finished_at"),
+export const executions = sqliteTable("executions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  workflowId: integer("workflow_id").notNull(),
+  status: text("status").notNull().default("pending"), // pending, running, completed, failed
+  logs: text("logs", { mode: 'json' }).default('[]'), // Array of log entries
+  startedAt: integer("started_at", { mode: 'timestamp' }).defaultNow(),
+  completedAt: integer("completed_at", { mode: 'timestamp' }),
 });
 
-// === SCHEMAS ===
+// === RELATIONS ===
+export const workflowRelations = relations(workflows, ({ many }) => ({
+  executions: many(executions),
+}));
+
+export const executionRelations = relations(executions, ({ one }) => ({
+  workflow: one(workflows, {
+    fields: [executions.workflowId],
+    references: [workflows.id],
+  }),
+}));
+
+// === ZOD SCHEMAS ===
 export const insertWorkflowSchema = createInsertSchema(workflows).omit({ 
   id: true, 
   createdAt: true, 
   updatedAt: true 
 });
 
-export const insertExecutionSchema = createInsertSchema(executions).omit({
-  id: true,
-  startedAt: true,
-  finishedAt: true
+export const insertCredentialSchema = createInsertSchema(credentials).omit({ 
+  id: true, 
+  createdAt: true 
 });
 
 // === TYPES ===
 export type Workflow = typeof workflows.$inferSelect;
 export type InsertWorkflow = z.infer<typeof insertWorkflowSchema>;
+export type Credential = typeof credentials.$inferSelect;
+export type InsertCredential = z.infer<typeof insertCredentialSchema>;
 export type Execution = typeof executions.$inferSelect;
-export type InsertExecution = z.infer<typeof insertExecutionSchema>;
 
-// Request types
-export type CreateWorkflowRequest = InsertWorkflow;
-export type UpdateWorkflowRequest = Partial<InsertWorkflow>;
+// Node types for the visual editor
+export type WorkflowNodeType = 'airflow_trigger' | 'sql_query' | 'python_script';
 
-// AI Generation types
-export const generateWorkflowSchema = z.object({
-  prompt: z.string().min(1, "Prompt is required"),
-});
-export type GenerateWorkflowRequest = z.infer<typeof generateWorkflowSchema>;
+export interface WorkflowNodeData {
+  label: string;
+  type: WorkflowNodeType;
+  config: Record<string, any>;
+}
 
-// Node Types for validation (simplified)
-export const nodeSchema = z.object({
-  id: z.string(),
-  type: z.string(), // 'trigger', 'http', 'logic', 'transform'
-  position: z.object({ x: z.number(), y: z.number() }),
-  data: z.record(z.any()),
-});
+// Prompt generation request
+export interface GenerateWorkflowRequest {
+  prompt: string;
+}

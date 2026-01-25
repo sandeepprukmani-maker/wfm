@@ -1,0 +1,20 @@
+In my project, I will be working extensively with Apache Airflow DAGs. I need to monitor and analyze logs for a specific task within a DAG, where the task may have executed multiple times due to retry attempts. From these logs, I want to extract specific information along with the corresponding DAG Run ID.
+
+In some scenarios, I will also be programmatically triggering DAGs. If a previous DAG run is still in progress, the newly triggered run may enter a queued state. In such cases, the system should wait for the previous execution to complete and then proceed to analyze the logs and metadata for the currently queued DAG run.
+
+Additionally, I want to leverage DAG Run IDs to execute SQL queries in Microsoft SQL Server (SSMS), retrieve query results, and perform further analysis. These results, along with log data, may require custom validations using Python scripts.
+
+To orchestrate this entire process, I want to implement an n8n-based workflow system where:
+    •    I provide a natural language prompt describing what needs to be done.
+    •    I supply all required inputs such as Airflow REST API details, DAG information, and SQL Server connection configurations.
+    •    Based on the prompt, the system should automatically generate a complete workflow that executes all steps in the correct sequence.
+    •    The workflow should provide detailed execution logs at every stage for debugging and traceability.
+
+If n8n is a suitable tool for this use case, I want it to be used as the core orchestration layer. The generated workflow should:
+    •    Be visually represented as a DAG/diagram.
+    •    Support drag-and-drop editing, similar to native n8n workflows.
+    •    Be fully executable from the UI.
+
+In addition, I want the ability to export any generated workflow as code (for example, JSON, or converted into Python where applicable) so that it can be version-controlled, reused, or integrated into CI/CD pipelines.
+
+Overall, the goal is to build a prompt-driven workflow orchestration system, functionally similar to n8n, that automates Airflow DAG execution, log analysis, SQL-based validations, and Python-based checks—while providing full visibility, editability, and code export capabilities.

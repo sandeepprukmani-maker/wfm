@@ -5,7 +5,7 @@ integrations = ["javascript_openai_ai_integrations:2.0.0", "python_openai_ai_int
 
 [nix]
 channel = "stable-25_05"
-packages = ["openssl", "postgresql"]
+packages = ["glibcLocales", "openssl", "postgresql"]
 
 [workflows]
 runButton = "Project"
@@ -41,5 +41,5 @@ externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["gunicorn", "--bind", "0.0.0.0:5000", "--reuse-port", "-w", "4", "server_py.main:app"]
+run = ["gunicorn", "--bind", "0.0.0.0:5000", "--reuse-port", "server_py.main:app"]
 build = ["npm", "run", "build"]

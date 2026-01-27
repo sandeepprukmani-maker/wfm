@@ -9,10 +9,29 @@ openai_client = None
 def get_ai():
     global openai_client
     if not openai_client:
-        openai_client = OpenAI(
-            api_key=os.environ.get('AI_INTEGRATIONS_OPENAI_API_KEY'),
-            base_url=os.environ.get('AI_INTEGRATIONS_OPENAI_BASE_URL')
-        )
+        try:
+            # First try the user's custom token fetching logic
+            from server_py.fetch_token import fetch_token
+            token_data = fetch_token()
+            api_key = token_data.get('access_token')
+            base_url = token_data.get('baseUrl')
+            
+            # Only use if tokens look valid (not placeholders)
+            if api_key and base_url and "your_access_token_here" not in api_key and "your_base_url_here" not in base_url:
+                openai_client = OpenAI(
+                    api_key=api_key,
+                    base_url=base_url
+                )
+                log("Using custom fetch_token for AI.")
+            else:
+                raise ValueError("Valid tokens not found in fetch_token response")
+        except (ImportError, ValueError, Exception) as e:
+            log(f"Custom fetch_token fallback: {e}. Using Replit AI Integration.")
+            # Fallback to Replit AI Integration
+            openai_client = OpenAI(
+                api_key=os.environ.get('AI_INTEGRATIONS_OPENAI_API_KEY'),
+                base_url=os.environ.get('AI_INTEGRATIONS_OPENAI_BASE_URL')
+            )
     return openai_client
 
 def log(message, source='flask'):

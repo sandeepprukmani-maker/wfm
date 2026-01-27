@@ -68,6 +68,8 @@ const NodeIcon = ({ type, className }: { type: string, className?: string }) => 
     case 'python_script': return <Terminal className={cn("w-5 h-5", className)} />;
     case 'condition': return <GitBranch className={cn("w-5 h-5", className)} />;
     case 'api_request': return <Globe className={cn("w-5 h-5", className)} />;
+    case 's3_operation': return <Database className={cn("w-5 h-5", className)} />;
+    case 'sftp_operation': return <Globe className={cn("w-5 h-5", className)} />;
     default: return <Sparkles className={cn("w-5 h-5", className)} />;
   }
 };
@@ -195,6 +197,8 @@ const CustomNode = ({ id, data, type, selected, execution }: any) => {
     python_script: CustomNode,
     condition: CustomNode,
     api_request: CustomNode,
+    s3_operation: CustomNode,
+    sftp_operation: CustomNode,
   };
 
 export default function WorkflowEditor() {
@@ -267,6 +271,8 @@ export default function WorkflowEditor() {
     python_script: (props: any) => <CustomNode {...props} execution={execution} />,
     condition: (props: any) => <CustomNode {...props} execution={execution} />,
     api_request: (props: any) => <CustomNode {...props} execution={execution} />,
+    s3_operation: (props: any) => <CustomNode {...props} execution={execution} />,
+    sftp_operation: (props: any) => <CustomNode {...props} execution={execution} />,
   }), [execution]);
 
   const filteredLogs = (execution?.logs as any[])?.filter(log => {
@@ -455,6 +461,12 @@ export default function WorkflowEditor() {
             </div>
             <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-muted p-1 rounded">
               <Globe className="w-3 h-3 text-orange-400" /> API Request
+            </div>
+            <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-muted p-1 rounded">
+              <Database className="w-3 h-3 text-cyan-400" /> S3 Operation
+            </div>
+            <div className="flex items-center gap-2 cursor-grab active:cursor-grabbing hover:bg-muted p-1 rounded">
+              <Globe className="w-3 h-3 text-indigo-400" /> SFTP Operation
             </div>
           </Panel>
         </ReactFlow>

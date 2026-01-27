@@ -8,7 +8,10 @@ import {
   Play,
   Search,
   ArrowRight,
-  Workflow
+  Workflow,
+  Github,
+  Download,
+  CheckSquare
 } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -30,6 +33,9 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 
 const createSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -43,6 +49,40 @@ export default function WorkflowList() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { toast } = useToast();
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const exportSuite = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      const res = await apiRequest("POST", "/api/automation/export-suite", { workflowIds: selectedIds });
+      const data = await res.json();
+      const blob = new Blob([data.code], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'automation_suite.py';
+      a.click();
+      toast({ title: "Suite Exported", description: `Exported ${selectedIds.length} workflows to pytest suite.` });
+    } catch (e: any) {
+      toast({ title: "Export Error", variant: "destructive", description: e.message });
+    }
+  };
+
+  const gitSync = async (action: 'push' | 'pull') => {
+    try {
+      await apiRequest("POST", "/api/git/sync", { action });
+      toast({ title: "Git Sync", description: `Successfully performed git ${action}` });
+    } catch (e: any) {
+      toast({ title: "Git Error", variant: "destructive", description: e.message });
+    }
+  };
 
   const form = useForm<z.infer<typeof createSchema>>({
     resolver: zodResolver(createSchema),
@@ -76,38 +116,55 @@ export default function WorkflowList() {
           <p className="text-muted-foreground mt-1">Manage and execute your automation pipelines.</p>
         </div>
         
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-primary/25">
-              <Plus className="w-4 h-4 mr-2" />
-              New Workflow
+        <div className="flex items-center gap-2">
+          {selectedIds.length > 0 && (
+            <Button variant="outline" onClick={exportSuite} className="shadow-sm">
+              <Download className="w-4 h-4 mr-2" />
+              Export Suite ({selectedIds.length})
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create Workflow</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={form.handleSubmit(handleCreate)} className="space-y-4 mt-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Name</label>
-                <Input {...form.register("name")} placeholder="My Awesome Pipeline" />
-                {form.formState.errors.name && (
-                  <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Description</label>
-                <Input {...form.register("description")} placeholder="What does this workflow do?" />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" type="button" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                  {form.formState.isSubmitting ? "Creating..." : "Create"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+          )}
+          <Button variant="outline" onClick={() => gitSync('pull')} className="shadow-sm">
+            <Github className="w-4 h-4 mr-2" />
+            Pull
+          </Button>
+          <Button variant="outline" onClick={() => gitSync('push')} className="shadow-sm">
+            <Github className="w-4 h-4 mr-2" />
+            Push
+          </Button>
+
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary text-primary-foreground shadow-lg hover:shadow-primary/25">
+                <Plus className="w-4 h-4 mr-2" />
+                New Workflow
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Workflow</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={form.handleSubmit(handleCreate)} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Name</label>
+                  <Input {...form.register("name")} placeholder="My Awesome Pipeline" />
+                  {form.formState.errors.name && (
+                    <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description</label>
+                  <Input {...form.register("description")} placeholder="What does this workflow do?" />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" type="button" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                  <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? "Creating..." : "Create"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex items-center gap-4 bg-card p-2 rounded-xl border border-border">
@@ -129,12 +186,28 @@ export default function WorkflowList() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered?.map((workflow) => (
-            <div key={workflow.id} className="group bg-card border border-border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 flex flex-col relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div key={workflow.id} className={cn(
+              "group bg-card border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 flex flex-col relative overflow-hidden",
+              selectedIds.includes(workflow.id) ? "border-primary ring-2 ring-primary/20" : "border-border"
+            )}>
+              <div className={cn(
+                "absolute top-0 left-0 w-1 h-full bg-primary transition-opacity",
+                selectedIds.includes(workflow.id) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+              )} />
               
               <div className="flex justify-between items-start mb-4">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-border flex items-center justify-center">
-                  <Workflow className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-gray-800 to-black border border-border flex items-center justify-center">
+                    <Workflow className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-8 w-8"
+                    onClick={() => toggleSelect(workflow.id)}
+                  >
+                    <CheckSquare className={cn("w-4 h-4", selectedIds.includes(workflow.id) ? "text-primary" : "text-muted-foreground")} />
+                  </Button>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger className="p-1 hover:bg-muted rounded-md opacity-0 group-hover:opacity-100 transition-opacity">

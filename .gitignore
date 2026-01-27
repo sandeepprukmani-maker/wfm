@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.pythonlibs/
+
+# Build output
+dist/
+build/
+*.pyc
+__pycache__/
+
+# Environment and config
+.env
+.env.local
+*.local
+
+# Database
+*.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Python
+*.egg-info/
+.eggs/
+*.egg
+.pytest_cache/
+
+# UV/pip
+uv.lock

@@ -32,8 +32,30 @@ import {
   Plus,
   Trash2,
   Globe,
-  Wand2
+  Wand2,
+  Clock
 } from 'lucide-react';
+
+const TIMEZONES = [
+  { value: 'UTC', label: 'UTC' },
+  { value: 'America/New_York', label: 'Eastern Time (US)' },
+  { value: 'America/Chicago', label: 'Central Time (US)' },
+  { value: 'America/Denver', label: 'Mountain Time (US)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (US)' },
+  { value: 'America/Anchorage', label: 'Alaska Time' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time' },
+  { value: 'Europe/London', label: 'London (GMT/BST)' },
+  { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+  { value: 'Europe/Berlin', label: 'Berlin (CET/CEST)' },
+  { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+  { value: 'Asia/Shanghai', label: 'Shanghai (CST)' },
+  { value: 'Asia/Kolkata', label: 'India (IST)' },
+  { value: 'Asia/Dubai', label: 'Dubai (GST)' },
+  { value: 'Asia/Singapore', label: 'Singapore (SGT)' },
+  { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+  { value: 'Australia/Perth', label: 'Perth (AWST)' },
+  { value: 'Pacific/Auckland', label: 'Auckland (NZST)' },
+];
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -144,6 +166,12 @@ const CustomNode = ({ id, data, type, selected, execution }: any) => {
           {isAirflowLog && data.config?.logAssertion && (
             <div className="text-[9px] text-blue-500/70 font-mono truncate border-l-2 border-blue-500/30 pl-1 mt-1">
               {data.config.taskName ? `${data.config.taskName}: ` : ''}"{data.config.logAssertion}"
+            </div>
+          )}
+          {data.config?.scheduledTime && data.config?.timezone && (
+            <div className="flex items-center gap-1 text-[9px] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded mt-1 w-fit">
+              <Clock className="w-2.5 h-2.5" />
+              {data.config.scheduledTime} ({data.config.timezone.split('/').pop()?.replace('_', ' ')})
             </div>
           )}
         </div>
@@ -678,6 +706,63 @@ export default function WorkflowEditor() {
                   />
                 </div>
               )}
+
+              {/* Schedule Section - Available for all node types */}
+              <div className="pt-4 border-t space-y-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-400" />
+                  <label className="text-sm font-semibold">Schedule (Optional)</label>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Set a specific time and timezone for this node to run.
+                </p>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">Scheduled Time</label>
+                  <Input 
+                    type="time"
+                    value={selectedNode?.data.config?.scheduledTime || ''} 
+                    onChange={(e) => updateNodeData(selectedNode!.id, { 
+                      config: { ...selectedNode.data.config, scheduledTime: e.target.value } 
+                    })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium">Timezone</label>
+                  <Select 
+                    value={selectedNode?.data.config?.timezone || ""}
+                    onValueChange={(val) => updateNodeData(selectedNode!.id, { 
+                      config: { ...selectedNode.data.config, timezone: val } 
+                    })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Timezone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIMEZONES.map(tz => (
+                        <SelectItem key={tz.value} value={tz.value}>{tz.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {selectedNode?.data.config?.scheduledTime && selectedNode?.data.config?.timezone && (
+                  <div className="text-xs text-green-500 flex items-center gap-1 bg-green-500/10 px-2 py-1 rounded">
+                    <Clock className="w-3 h-3" />
+                    Scheduled: {selectedNode.data.config.scheduledTime} ({TIMEZONES.find(tz => tz.value === selectedNode.data.config.timezone)?.label || selectedNode.data.config.timezone})
+                  </div>
+                )}
+                {(selectedNode?.data.config?.scheduledTime || selectedNode?.data.config?.timezone) && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-muted-foreground"
+                    onClick={() => updateNodeData(selectedNode!.id, { 
+                      config: { ...selectedNode.data.config, scheduledTime: undefined, timezone: undefined } 
+                    })}
+                  >
+                    Clear Schedule
+                  </Button>
+                )}
+              </div>
               
               {selectedNode?.data.type === 'api_request' && (
                 <div className="space-y-3">

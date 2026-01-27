@@ -70,6 +70,13 @@ The `/api/airflow/natural-language` endpoint uses OpenAI to parse natural langua
 - "create a variable called api_key with value abc123"
 - "clear all failed tasks in the data_sync dag"
 
+### Node Scheduling Feature
+All workflow nodes support optional scheduling with:
+- **Scheduled Time**: Time picker for setting when the node should run (HH:MM format)
+- **Timezone**: Dropdown with 18 major timezones (UTC, US timezones, European, Asian, Australian)
+- **Visual Indicator**: Nodes with schedules display a blue clock badge showing time and timezone on the node card
+- **Configuration**: Schedule is stored in `node.data.config.scheduledTime` and `node.data.config.timezone`
+
 ### Development Workflow
 - `npm run dev` starts both Flask API and Vite dev server concurrently
 - Vite proxies `/api/*` requests to Flask backend

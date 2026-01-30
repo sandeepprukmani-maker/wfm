@@ -84,10 +84,7 @@ class Execution(Base):
             'completedAt': timestamp_to_iso(self.completed_at)
         }
 
-db_url = os.environ.get('DATABASE_URL', 'sqlite:///local.db')
-if db_url.startswith('postgresql:'):
-    db_url = 'sqlite:///local.db'
-
+db_url = 'sqlite:///local.db'
 engine = create_engine(db_url, echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

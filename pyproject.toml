@@ -2,7 +2,7 @@
 name = "repl-nix-workspace"
 version = "0.1.0"
 description = "Add your description here"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.42.35",
     "email-validator>=2.3.0",
@@ -14,9 +14,7 @@ dependencies = [
     "gunicorn>=24.1.1",
     "openai>=2.15.0",
     "openpyxl>=3.1.5",
-    "pandas>=3.0.0",
     "paramiko>=4.0.0",
-    "psycopg2-binary>=2.9.11",
     "pymssql>=2.3.11",
     "pytest>=9.0.2",
     "python-dateutil>=2.9.0.post0",

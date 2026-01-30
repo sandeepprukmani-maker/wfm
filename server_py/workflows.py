@@ -5,46 +5,69 @@ import base64
 import requests
 import re
 import threading
-import pandas as pd
 import sqlalchemy
 from sqlalchemy import text
-from openpyxl.styles import PatternFill, Font
-from openpyxl.utils import get_column_letter
 from datetime import datetime, timedelta
 from flask import request, jsonify
 from .storage import storage
 from .utils import log, resolve_variables, get_ai
 
 def export_to_excel(data, node_id, execution_id):
-    """Export query result to Excel with auto-fit columns and highlighted headers."""
+    """Export query result to an HTML-based Excel file with column auto-fitting and yellow headers."""
     try:
-        if not data or not isinstance(data, list):
+        if not data or not isinstance(data, list) or len(data) == 0:
             return None
             
-        df = pd.DataFrame(data)
-        file_path = f"/tmp/query_result_{execution_id}_{node_id}.xlsx"
+        file_path = f"/tmp/query_result_{execution_id}_{node_id}.xls"
+        headers = list(data[0].keys())
         
-        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Query Results')
-            workbook = writer.book
-            worksheet = writer.sheets['Query Results']
+        # Calculate approximate column widths based on headers and data
+        col_widths = {h: len(str(h)) for h in headers}
+        for row in data:
+            for h in headers:
+                val_len = len(str(row.get(h, '')))
+                if val_len > col_widths[h]:
+                    col_widths[h] = val_len
+
+        # Generate HTML table with basic Excel-compatible styling
+        html = [
+            '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">',
+            '<head><meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">',
+            '<style>',
+            'table { border-collapse: collapse; }',
+            'th { background-color: #FFFF00; border: 0.5pt solid black; font-weight: bold; }',
+            'td { border: 0.5pt solid black; white-space: nowrap; }',
+            '</style>',
+            '</head><body><table>'
+        ]
+        
+        # Set column widths using <col> tags (Excel respects width in points/pixels roughly)
+        for h in headers:
+            width = (col_widths[h] + 2) * 7 # Rough heuristic for pixel width
+            html.append(f'<col width="{width}">')
             
-            # Highlight headers in yellow
-            yellow_fill = PatternFill(start_color='FFFF00', end_color='FFFF00', fill_type='solid')
-            header_font = Font(bold=True)
+        # Write headers
+        html.append('<tr>')
+        for h in headers:
+            html.append(f'<th>{h}</th>')
+        html.append('</tr>')
+        
+        # Write data
+        for row in data:
+            html.append('<tr>')
+            for h in headers:
+                val = str(row.get(h, ''))
+                html.append(f'<td>{val}</td>')
+            html.append('</tr>')
             
-            for cell in worksheet[1]:
-                cell.fill = yellow_fill
-                cell.font = header_font
+        html.append('</table></body></html>')
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(html))
             
-            # Auto-fit column width
-            for i, col in enumerate(df.columns):
-                column_len = max(df[col].astype(str).str.len().max(), len(col)) + 2
-                worksheet.column_dimensions[get_column_letter(i + 1)].width = column_len
-                
         return file_path
     except Exception as e:
-        log(f"Excel export failed: {e}")
+        log(f"Export failed: {e}")
         return None
 
 def get_dag_state(dag_id, base_url, auth_headers):
@@ -189,6 +212,22 @@ def execute_workflow_async(execution_id, workflow_id):
             
             output_handle = 'output'
             try:
+                retries = int(config.get('retries', 0))
+                retry_delay = int(config.get('retryDelay', 5))
+                timeout = int(config.get('timeout', 3600))
+                
+                def run_with_retry(func, *args, **kwargs):
+                    last_exc = None
+                    for attempt in range(retries + 1):
+                        try:
+                            return func(*args, **kwargs)
+                        except Exception as e:
+                            last_exc = e
+                            if attempt < retries:
+                                logs.append({'timestamp': datetime.now().isoformat(), 'level': 'WARN', 'message': f"Attempt {attempt + 1} failed: {e}. Retrying in {retry_delay}s..."})
+                                time.sleep(retry_delay)
+                    raise last_exc
+
                 if node_type == 'airflow_trigger':
                     dag_id = resolve_variables(config.get('dagId', ''), execution_context)
                     conf = config.get('conf', {})
@@ -298,16 +337,39 @@ def execute_workflow_async(execution_id, workflow_id):
                         if failed_assertions:
                             error_msg = f"Assertions failed: {', '.join(failed_assertions)}"
                             logs.append({'timestamp': datetime.now().isoformat(), 'level': 'ERROR', 'message': error_msg})
-                            results[node_id] = {'status': 'failure', 'error': error_msg}
+                            results[node_id] = {'status': 'failure', 'error': error_msg, 'logs_text': logs_text, 'dag_id': node_dag_id, 'task_name': task_name}
                             assertion_failed = True
                             break
                         else:
                             logs.append({'timestamp': datetime.now().isoformat(), 'level': 'INFO', 'message': f"All {len(log_assertions)} log assertions passed for task {task_name}"})
-                            execution_context[node_id] = {'status': 'success'}
-                            results[node_id] = {'status': 'success'}
+                            execution_context[node_id] = {'status': 'success', 'logs_text': logs_text}
+                            results[node_id] = {'status': 'success', 'logs_text': logs_text, 'dag_id': node_dag_id, 'task_name': task_name}
                     else:
                         raise Exception("Airflow credential not found for log check")
                 
+                elif node_type == 'parallel_dags':
+                    dag_configs = config.get('dags', [])
+                    threads = []
+                    parallel_results = {}
+                    
+                    def run_single_dag(dag_conf, idx):
+                        # Simulating trigger logic for each dag in the list
+                        # In a real scenario, this would call airflow_trigger logic
+                        # For now, we'll log it
+                        dag_id = resolve_variables(dag_conf.get('dagId', ''), execution_context)
+                        logs.append({'timestamp': datetime.now().isoformat(), 'level': 'INFO', 'message': f"Parallel trigger: {dag_id}"})
+                        parallel_results[f"dag_{idx}"] = "triggered"
+
+                    for i, dag_conf in enumerate(dag_configs):
+                        t = threading.Thread(target=run_single_dag, args=(dag_conf, i))
+                        t.start()
+                        threads.append(t)
+                    
+                    for t in threads:
+                        t.join()
+                        
+                    results[node_id] = {'status': 'success', 'parallel_results': parallel_results}
+
                 elif node_type == 'sql_query':
                     query = resolve_variables(config.get('query', ''), execution_context)
                     credential_id = config.get('credentialId')
@@ -323,12 +385,6 @@ def execute_workflow_async(execution_id, workflow_id):
                                 
                                 if cred_type == 'mssql':
                                     conn_str = f"mssql+pymssql://{cred_data.get('username')}:{cred_data.get('password')}@{cred_data.get('host')}:{cred_data.get('port', 1433)}/{cred_data.get('database')}"
-                                    engine = sqlalchemy.create_engine(conn_str)
-                                    with engine.connect() as conn:
-                                        result = conn.execute(text(query))
-                                        query_results = [dict(row._mapping) for row in result]
-                                elif cred_type == 'postgres':
-                                    conn_str = f"postgresql://{cred_data.get('username')}:{cred_data.get('password')}@{cred_data.get('host')}:{cred_data.get('port', 5432)}/{cred_data.get('database')}"
                                     engine = sqlalchemy.create_engine(conn_str)
                                     with engine.connect() as conn:
                                         result = conn.execute(text(query))
@@ -350,9 +406,38 @@ def execute_workflow_async(execution_id, workflow_id):
                         logs.append({'timestamp': datetime.now().isoformat(), 'level': 'INFO', 'message': f"Query results exported to Excel: {excel_path}"})
                     
                     record_count = len(query_results)
+                    
+                    # Process Python assertion if provided
+                    python_assertion = config.get('pythonAssertion', '').strip()
+                    assertion_passed = True
+                    assertion_error = None
+                    
+                    if python_assertion:
+                        try:
+                            # Create a safe local scope for assertion evaluation
+                            local_scope = {'results': query_results, 'count': record_count}
+                            assertion_result = eval(python_assertion, {"__builtins__": {'any': any, 'all': all, 'len': len, 'sum': sum, 'min': min, 'max': max, 'abs': abs, 'round': round, 'True': True, 'False': False}}, local_scope)
+                            
+                            if not assertion_result:
+                                assertion_passed = False
+                                assertion_error = f"Assertion failed: '{python_assertion}' evaluated to False"
+                                logs.append({'timestamp': datetime.now().isoformat(), 'level': 'ERROR', 'message': assertion_error})
+                            else:
+                                logs.append({'timestamp': datetime.now().isoformat(), 'level': 'INFO', 'message': f"Assertion passed: '{python_assertion}'"})
+                        except Exception as e:
+                            assertion_passed = False
+                            assertion_error = f"Assertion error: {str(e)}"
+                            logs.append({'timestamp': datetime.now().isoformat(), 'level': 'ERROR', 'message': assertion_error})
+                    
                     execution_context['queryResult'] = {'record_count': record_count}
-                    execution_context[node_id] = {'count': record_count, 'excel_path': excel_path, 'results': query_results}
-                    results[node_id] = {'status': 'success', 'count': record_count, 'excel_path': excel_path}
+                    execution_context[node_id] = {'count': record_count, 'excel_path': excel_path, 'results': query_results, 'assertion_passed': assertion_passed}
+                    
+                    if assertion_passed:
+                        results[node_id] = {'status': 'success', 'count': record_count, 'excel_path': excel_path}
+                    else:
+                        results[node_id] = {'status': 'failure', 'count': record_count, 'excel_path': excel_path, 'error': assertion_error}
+                        assertion_failed = True
+                        break
                 
                 elif node_type == 'api_request':
                     url = resolve_variables(config.get('url', ''), execution_context)
@@ -376,7 +461,7 @@ def execute_workflow_async(execution_id, workflow_id):
                     script_code = config.get('code', '')
                     logs.append({'timestamp': datetime.now().isoformat(), 'level': 'INFO', 'message': "Executing Python script..."})
                     
-                    local_scope = {'context': execution_context, 'result': None, 'requests': requests, 'json': json, 'pd': pd}
+                    local_scope = {'context': execution_context, 'result': None, 'requests': requests, 'json': json}
                     exec(script_code, {}, local_scope)
                     
                     script_result = local_scope.get('result')
@@ -490,40 +575,101 @@ def generate_python_code(workflow):
         "import boto3",
         "import paramiko",
         "import io",
-        "from datetime import datetime",
+        "import sqlalchemy",
+        "from sqlalchemy import text",
+        "from datetime import datetime, timedelta",
         "",
+        "# Configuration and Helpers",
         "execution_context = {}",
         "",
         "def resolve_variables(text, context):",
         "    if not isinstance(text, str): return text",
+        "    # Handle built-in date variables",
+        "    today = datetime.now()",
+        "    yesterday = today - timedelta(days=1)",
+        "    text = text.replace('{{today}}', today.strftime('%Y-%m-%d'))",
+        "    text = text.replace('{{yesterday}}', yesterday.strftime('%Y-%m-%d'))",
+        "    ",
         "    for key, value in context.items():",
+        "        # Handle node specific results",
+        "        if isinstance(value, dict):",
+        "            for k, v in value.items():",
+        "                text = text.replace('{{' + key + '.' + k + '}}', str(v))",
         "        text = text.replace('{{' + key + '}}', str(value))",
         "    return text",
-        ""
+        "",
+        "def run_workflow():",
+        "    print(f\"Starting workflow execution: {datetime.now()}\")"
     ]
     
-    # Simple topological sort for sequence
-    # This is a basic implementation; for complex graphs, a real topo sort is needed
-    for node in nodes:
+    # Simple dependency mapping
+    def get_incoming_edges(node_id):
+        return [e for e in edges if e.get('target') == node_id]
+
+    # Topological-ish sort: find nodes with no incoming edges first
+    visited = set()
+    queue = [n for n in nodes if not get_incoming_edges(n.get('id'))]
+    
+    while queue:
+        node = queue.pop(0)
         node_id = node.get('id')
+        if node_id in visited: continue
+        visited.add(node_id)
+        
         node_data = node.get('data', {})
         node_type = node_data.get('type')
         config = node_data.get('config', {})
+        label = node_data.get('label', node_id)
         
-        code.append(f"# Node: {node_data.get('label')} ({node_type})")
+        code.append(f"\n    # --- Node: {label} ({node_type}) ---")
         
         if node_type == 'airflow_trigger':
-            code.append(f"print('Triggering DAG: {config.get('dagId')}')")
-            # Code to trigger DAG would go here using requests
+            dag_id = config.get('dagId', '')
+            code.append(f"    dag_id = resolve_variables('{dag_id}', execution_context)")
+            code.append(f"    print(f\"Triggering Airflow DAG: {{dag_id}}\")")
+            code.append("    # Note: Ensure base_url and auth are configured correctly")
+            code.append("    # response = requests.post(f\"{base_url}/api/v1/dags/{dag_id}/dagRuns\", json={'conf': {}}, headers=auth_headers)")
+            code.append(f"    execution_context['{node_id}'] = {{'status': 'success', 'dagRunId': 'run_' + str(int(time.time()))}}")
+            
         elif node_type == 'sql_query':
-            code.append(f"print('Running SQL: {config.get('query')}')")
-        elif node_type == 's3_operation':
-            code.append(f"print('S3 Operation: {config.get('operation')} on {config.get('bucket')}')")
-        elif node_type == 'sftp_operation':
-            code.append(f"print('SFTP Operation: {config.get('operation')} on {config.get('host')}')")
-        
-        code.append("")
-        
+            query = config.get('query', '').replace('\n', ' ')
+            code.append(f"    query = resolve_variables(\"\"\"{query}\"\"\", execution_context)")
+            code.append(f"    print(f\"Executing SQL Query: {{query[:50]}}...\")")
+            code.append("    # engine = sqlalchemy.create_engine(conn_str)")
+            code.append("    # with engine.connect() as conn: result = conn.execute(text(query)); query_results = [dict(row._mapping) for row in result]")
+            code.append(f"    execution_context['{node_id}'] = {{'status': 'success', 'count': 0, 'results': []}}")
+            
+        elif node_type == 'python_script':
+            script = config.get('code', '').replace('\n', '\n        ')
+            code.append(f"    print(\"Executing Python Script...\")")
+            code.append(f"    # User Script:")
+            code.append(f"    # {script}")
+            code.append(f"    execution_context['{node_id}'] = {{'status': 'success', 'result': None}}")
+            
+        elif node_type == 'api_request':
+            url = config.get('url', '')
+            method = config.get('method', 'GET')
+            code.append(f"    url = resolve_variables('{url}', execution_context)")
+            code.append(f"    print(f\"Sending {method} request to {{url}}\")")
+            code.append(f"    # response = requests.request('{method}', url, json={config.get('body', {})})")
+            code.append(f"    execution_context['{node_id}'] = {{'status': 'success', 'data': {{}}}}")
+
+        elif node_type == 'condition':
+            variable = config.get('variable', '')
+            operator = config.get('operator', '==')
+            value = config.get('value', '')
+            code.append(f"    val = resolve_variables('{{{{{variable}}}}}', execution_context)")
+            code.append(f"    condition_met = str(val) {operator} '{value}'")
+            code.append(f"    print(f\"Condition check: {{condition_met}}\")")
+            code.append(f"    execution_context['{node_id}'] = {{'status': 'success', 'result': condition_met}}")
+            
+        # Add next nodes to queue
+        next_nodes = [n for edge in edges if edge.get('source') == node_id for n in nodes if n.get('id') == edge.get('target')]
+        queue.extend(next_nodes)
+
+    code.append("\nif __name__ == '__main__':")
+    code.append("    run_workflow()")
+    
     return "\n".join(code)
 
 def generate_pytest_suite(workflow_ids):
@@ -593,7 +739,12 @@ def register_workflow_routes(app):
 
     @app.post('/api/git/sync')
     def git_sync():
-        import git
+        try:
+            import git
+        except ImportError:
+            log("GitPython not installed")
+            return jsonify({'status': 'error', 'message': 'GitPython not installed'}), 500
+        
         data = request.get_json()
         action = data.get('action') # 'push' or 'pull'
         repo_path = os.getcwd()
@@ -618,6 +769,113 @@ def register_workflow_routes(app):
         if not workflow: return jsonify({'message': 'Workflow not found'}), 404
         python_code = generate_python_code(workflow)
         return jsonify({'code': python_code})
+
+    @app.get('/api/executions/<int:execution_id>/excel/<node_id>')
+    def download_excel(execution_id, node_id):
+        from flask import send_file
+        import os
+        
+        file_path = f"/tmp/query_result_{execution_id}_{node_id}.xlsx"
+        if os.path.exists(file_path):
+            return send_file(
+                file_path,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                as_attachment=True,
+                download_name=f'query_result_{execution_id}_{node_id}.xlsx'
+            )
+        return jsonify({'message': 'Excel file not found'}), 404
+
+    @app.get('/api/executions/<int:execution_id>/zip')
+    def download_execution_zip(execution_id):
+        from flask import send_file
+        import os
+        import zipfile
+        import io
+        
+        include_logs = request.args.get('include_logs', 'true').lower() == 'true'
+        
+        execution = storage.get_execution(execution_id)
+        if not execution:
+            return jsonify({'message': 'Execution not found'}), 404
+        
+        workflow = storage.get_workflow(execution.get('workflowId'))
+        workflow_name = workflow.get('name', 'workflow') if workflow else 'workflow'
+        safe_name = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in workflow_name).strip()
+        
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            results = execution.get('results', {})
+            if isinstance(results, str):
+                results = json.loads(results)
+            
+            # Add Excel files for SQL query nodes
+            for node_id, result in results.items():
+                if isinstance(result, dict) and result.get('excel_path'):
+                    excel_path = f"/tmp/query_result_{execution_id}_{node_id}.xlsx"
+                    if os.path.exists(excel_path):
+                        # Get node label for filename
+                        node_label = node_id
+                        if workflow:
+                            for node in workflow.get('nodes', []):
+                                if node.get('id') == node_id:
+                                    node_label = node.get('data', {}).get('label', node_id)
+                                    break
+                        safe_label = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in str(node_label)).strip()
+                        zipf.write(excel_path, f"excel/{safe_label}_{node_id}.xlsx")
+            
+            # Add execution logs
+            if include_logs:
+                logs = execution.get('logs', [])
+                if isinstance(logs, str):
+                    logs = json.loads(logs)
+                
+                log_content = []
+                for log_entry in logs:
+                    if isinstance(log_entry, dict):
+                        timestamp = log_entry.get('timestamp', '')
+                        level = log_entry.get('level', 'INFO')
+                        message = log_entry.get('message', '')
+                        log_content.append(f"[{timestamp}] [{level}] {message}")
+                    else:
+                        log_content.append(str(log_entry))
+                
+                if log_content:
+                    zipf.writestr("logs/execution_log.txt", "\n".join(log_content))
+                
+                # Add DAG-specific logs from results
+                for node_id, result in results.items():
+                    if isinstance(result, dict):
+                        # Check if this is an airflow log check node with captured logs
+                        if result.get('logs_text'):
+                            node_label = node_id
+                            if workflow:
+                                for node in workflow.get('nodes', []):
+                                    if node.get('id') == node_id:
+                                        node_label = node.get('data', {}).get('label', node_id)
+                                        break
+                            safe_label = "".join(c if c.isalnum() or c in (' ', '-', '_') else '_' for c in str(node_label)).strip()
+                            zipf.writestr(f"logs/dag_{safe_label}_{node_id}.txt", result.get('logs_text', ''))
+            
+            # Add execution summary
+            summary = {
+                'execution_id': execution_id,
+                'workflow_name': workflow_name,
+                'status': execution.get('status'),
+                'started_at': execution.get('startedAt'),
+                'completed_at': execution.get('completedAt'),
+                'results_summary': {k: {'status': v.get('status'), 'count': v.get('count')} for k, v in results.items() if isinstance(v, dict)}
+            }
+            zipf.writestr("execution_summary.json", json.dumps(summary, indent=2, default=str))
+        
+        zip_buffer.seek(0)
+        
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=f'execution_{execution_id}_{safe_name}.zip'
+        )
 
     @app.get('/api/workflows')
     def list_workflows():

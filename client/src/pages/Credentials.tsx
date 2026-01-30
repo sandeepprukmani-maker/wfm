@@ -118,7 +118,7 @@ export default function Credentials() {
                   <SelectContent>
                     <SelectItem value="airflow">Apache Airflow</SelectItem>
                     <SelectItem value="mssql">MS SQL Server</SelectItem>
-                    <SelectItem value="postgres">PostgreSQL</SelectItem>
+                    <SelectItem value="slack">Slack Webhook</SelectItem>
                     <SelectItem value="s3">AWS S3</SelectItem>
                     <SelectItem value="sftp">SFTP Server</SelectItem>
                   </SelectContent>
@@ -133,10 +133,16 @@ export default function Credentials() {
                 </>
               )}
 
-              {(credentialType === "mssql" || credentialType === "postgres") && (
+              {credentialType === "slack" && (
+                <>
+                  <Input {...form.register("baseUrl")} name="webhookUrl" placeholder="Slack Webhook URL" required />
+                </>
+              )}
+
+              {credentialType === "mssql" && (
                 <>
                   <Input {...form.register("host")} placeholder="Server Address (Host)" required />
-                  <Input {...form.register("port")} placeholder={credentialType === "mssql" ? "Port (Default: 1433)" : "Port (Default: 5432)"} />
+                  <Input {...form.register("port")} placeholder="Port (Default: 1433)" />
                   <Input {...form.register("database")} placeholder="Database Name" required />
                   <Input {...form.register("username")} placeholder="Username" required />
                   <Input type="password" {...form.register("password")} placeholder="Password" required />
@@ -202,7 +208,7 @@ export default function Credentials() {
                     <CardDescription className="capitalize">
                       {cred.type === 'mssql' ? 'SQL Server' : 
                        cred.type === 'airflow' ? 'Airflow' :
-                       cred.type === 'postgres' ? 'PostgreSQL' :
+                       cred.type === 'slack' ? 'Slack' :
                        cred.type === 's3' ? 'AWS S3' :
                        cred.type === 'sftp' ? 'SFTP' : cred.type}
                     </CardDescription>

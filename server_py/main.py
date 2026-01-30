@@ -1,6 +1,6 @@
 import os
 import time
-from flask import Flask, send_from_directory, request
+from flask import Flask, send_from_directory, request, jsonify, send_file
 from flask_cors import CORS
 from .models import init_db
 from .utils import log
@@ -28,6 +28,10 @@ def log_response(response):
 register_workflow_routes(app)
 register_airflow_routes(app)
 register_management_routes(app)
+
+@app.route('/api/health')
+def health_check():
+    return jsonify({"status": "healthy", "time": time.time()})
 
 @app.route('/')
 @app.route('/<path:path>')

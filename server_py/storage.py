@@ -75,14 +75,22 @@ class DatabaseStorage:
                 db.commit()
     
     def get_credentials(self):
-        with self.get_db() as db:
-            credentials = db.query(Credential).order_by(desc(Credential.created_at)).all()
-            return [c.to_dict() for c in credentials]
+        try:
+            with self.get_db() as db:
+                credentials = db.query(Credential).order_by(desc(Credential.created_at)).all()
+                return [c.to_dict() for c in credentials]
+        except Exception as e:
+            log(f"Error fetching credentials: {e}")
+            return []
     
     def get_credential(self, id: int):
-        with self.get_db() as db:
-            credential = db.query(Credential).filter(Credential.id == id).first()
-            return credential.to_dict() if credential else None
+        try:
+            with self.get_db() as db:
+                credential = db.query(Credential).filter(Credential.id == id).first()
+                return credential.to_dict() if credential else None
+        except Exception as e:
+            log(f"Error fetching credential {id}: {e}")
+            return None
     
     def create_credential(self, data: dict):
         with self.get_db() as db:

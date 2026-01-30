@@ -62,8 +62,16 @@ def register_management_routes(app):
             zf.writestr('execution.log', log_content)
             
             results = execution.get('results', {})
-            for node_id, csv_data in results.items():
-                zf.writestr(f'results/node_{node_id}.csv', str(csv_data))
+            for node_id, node_result in results.items():
+                if isinstance(node_result, dict) and node_result.get('excel_path'):
+                    excel_path = node_result.get('excel_path')
+                    if os.path.exists(excel_path):
+                        zf.write(excel_path, f'results/node_{node_id}.xlsx')
+                
+                # Still include CSV data if available
+                csv_data = node_result.get('csv_data') if isinstance(node_result, dict) else node_result
+                if csv_data:
+                    zf.writestr(f'results/node_{node_id}.csv', str(csv_data))
         
         buffer.seek(0)
         return send_file(

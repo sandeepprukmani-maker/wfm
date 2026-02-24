@@ -1,250 +1,298 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lists Manager — EML Engine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #f8fafc; --surface: #ffffff; --border: #e2e8f0; --border-bright: #cbd5e1;
-    --accent: #2563eb; --accent2: #059669; --accent3: #dc2626;
-    --text: #1e293b; --muted: #64748b;
-    --sans: 'Inter', system-ui, sans-serif; --mono: 'JetBrains Mono', monospace;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; line-height: 1.5; }
-  body::before { display: none; }
-  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
-  .sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
-  .sidebar-header { padding: 24px 20px; border-bottom: 1px solid var(--border); background: #fff; }
-  .logo { font-family: var(--sans); font-weight: 700; font-size: 16px; color: var(--text); margin-bottom: 4px; }
-  .logo-sub { font-size: 11px; color: var(--muted); }
-  .sidebar-nav { padding: 12px 0; }
-  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.15s; text-decoration: none; }
-  .nav-item:hover, .nav-item.active { color: var(--text); background: rgba(91,91,255,0.08); border-left: 2px solid var(--accent); }
-  .nav-icon { width: 14px; text-align: center; }
-  .main { display: flex; flex-direction: column; }
-  .topbar { padding: 16px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); }
-  .topbar-title { font-family: var(--sans); font-size: 20px; font-weight: 800; }
-  .topbar-title span { color: var(--accent3); }
-  .content { flex: 1; padding: 24px 28px; overflow-y: auto; }
-  .btn { padding: 8px 16px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--border-bright); background: transparent; color: var(--text); cursor: pointer; transition: all 0.15s; border-radius: 2px; }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn-primary:hover { background: #7070ff; color: #fff; }
-  .btn-danger { border-color: var(--accent3); color: var(--accent3); }
-  .btn-danger:hover { background: rgba(255,91,138,0.1); }
-  .btn-sm { padding: 5px 10px; font-size: 9px; }
-  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
-  .panel-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); }
-  .panel-title { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent3); }
-  .panel-body { padding: 20px; }
-  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-  label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
-  input[type="text"], textarea { background: var(--bg); border: 1px solid var(--border-bright); color: var(--text); padding: 8px 12px; font-family: var(--mono); font-size: 11px; border-radius: 2px; outline: none; width: 100%; }
-  input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
-  textarea { min-height: 120px; resize: vertical; }
-  .lists-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
-  .list-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
-  .list-card-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
-  .list-name { font-size: 12px; color: var(--accent2); }
-  .list-count { font-size: 9px; color: var(--muted); padding: 2px 8px; border: 1px solid var(--border-bright); border-radius: 2px; }
-  .list-items { padding: 12px 16px; max-height: 200px; overflow-y: auto; }
-  .list-item { font-size: 10px; padding: 4px 0; border-bottom: 1px solid rgba(34,34,50,0.3); color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
-  .list-item:last-child { border: none; }
-  .list-actions { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
-  .toast { padding: 12px 18px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 2px; font-size: 11px; animation: slideIn 0.2s ease; max-width: 300px; }
-  .toast.success { border-color: var(--accent2); color: var(--accent2); }
-  .toast.error { border-color: var(--accent3); color: var(--accent3); }
-  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
-  .modal { background: var(--surface); border: 1px solid var(--border-bright); border-radius: 4px; width: 90%; max-width: 500px; }
-  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-  .modal-body { padding: 20px; }
-  .hidden { display: none !important; }
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .empty-state .icon { font-size: 40px; margin-bottom: 16px; opacity: 0.4; }
-  .empty-state h3 { font-family: var(--sans); font-size: 16px; margin-bottom: 8px; color: var(--text); opacity: 0.5; }
-  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); margin-right: 6px; animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictionaries — Professional Email Transformation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 4px 20px -5px rgba(0, 0, 0, 0.02);
+        }
+        .card-shadow:hover {
+            box-shadow: 0 20px 40px -15px rgba(245, 158, 11, 0.1), 0 10px 20px -10px rgba(245, 158, 11, 0.05);
+        }
+    </style>
 </head>
-<body>
-<div class="app">
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo">⚡ EML Engine</div>
-      <div class="logo-sub">Transformation System v1.0</div>
-    </div>
-    <nav class="sidebar-nav">
-      <a class="nav-item" href="/"><span class="nav-icon">◈</span> Templates</a>
-      <a class="nav-item active" href="/lists"><span class="nav-icon">≡</span> Lists Manager</a>
-    </nav>
-  </aside>
+<body class="bg-[#f8fafc] text-slate-900 h-full selection:bg-amber-100">
 
-  <main class="main">
-    <div class="topbar">
-      <div>
-        <div class="topbar-title">Lists <span>Manager</span></div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px">
-          <span class="status-dot"></span>Named value pools for Random replacement mode
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="showCreateModal()">+ New List</button>
-    </div>
-
-    <div class="content">
-      <div id="listsGrid" class="lists-grid">
-        <div class="empty-state" style="grid-column:1/-1">
-          <div class="icon">≡</div>
-          <h3>No Lists Yet</h3>
-          <p>Create named lists to use with the Random replacement mode in your templates.</p>
-        </div>
-      </div>
-    </div>
-  </main>
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-amber-50 rounded-full blur-[120px] opacity-60"></div>
+    <div class="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-orange-50 rounded-full blur-[100px] opacity-40"></div>
 </div>
+
+<header class="sticky top-0 z-[100] px-8 py-4 glass border-b border-slate-200/60 flex items-center justify-between mx-4 mt-4 rounded-2xl">
+    <div class="flex items-center gap-4">
+        <div class="w-11 h-11 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-xl shadow-slate-200 group transition-transform hover:scale-105">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+        </div>
+        <div>
+            <h1 class="font-bold text-xl tracking-tight text-slate-900">EML<span class="text-amber-600">ENGINE</span></h1>
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <p class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold">Transformation Core v2.0</p>
+            </div>
+        </div>
+    </div>
+    
+    <nav class="hidden lg:flex items-center bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/50">
+        <a href="/" class="px-5 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-all">Templates</a>
+        <a href="/lists" class="px-5 py-2 text-sm font-semibold text-amber-600 bg-white rounded-lg shadow-sm border border-amber-100 transition-all">Dictionaries</a>
+    </nav>
+
+    <div class="flex items-center gap-3">
+        <button onclick="showCreateModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-slate-200 flex items-center gap-2 active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+            </svg>
+            Create Dictionary
+        </button>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-8 py-12 w-full flex-1">
+    <div class="flex flex-col items-center text-center mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-600 text-[10px] font-extrabold uppercase tracking-widest mb-6">
+            Global Dictionaries
+        </div>
+        <h2 class="text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
+            Manage <span class="gradient-text">Data Dictionaries</span><br/>for Random Generation
+        </h2>
+        <p class="text-slate-500 text-lg max-w-2xl leading-relaxed">
+            Named value pools used by the transformation engine. Define sets of email addresses, IDs, or custom patterns to be injected during generation.
+        </p>
+    </div>
+
+    <div id="listsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="col-span-full py-32 flex flex-col items-center text-center">
+            <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-5xl mb-8 shadow-2xl shadow-slate-200 border border-slate-100">≡</div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-3">No Dictionaries Found</h3>
+            <p class="text-slate-500 max-w-sm mb-10 leading-relaxed text-sm font-medium">Create named lists to provide the transformation engine with unique values for random replacement modes.</p>
+            <button onclick="showCreateModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-slate-200 active:scale-95">Create First Dictionary</button>
+        </div>
+    </div>
+</main>
 
 <!-- Create/Edit Modal -->
-<div class="modal-overlay hidden" id="createModal">
-  <div class="modal">
-    <div class="modal-header">
-      <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent3)" id="modalTitle">Create New List</div>
-      <button class="btn btn-sm" onclick="hideModal()">✕</button>
+<div id="createModal" class="fixed inset-0 z-[1000] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all border border-white/20">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+                <h3 class="font-bold text-slate-900 text-lg" id="modalTitle">Create Dictionary</h3>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Random Replacement Pool</p>
+            </div>
+            <button onclick="hideModal()" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-8 space-y-8">
+            <div class="space-y-3">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Internal Label</label>
+                <input type="text" id="listName" placeholder="e.g. employee_emails" 
+                    class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-amber-100 focus:border-amber-500 transition-all outline-none mono text-sm font-medium">
+            </div>
+            <div class="space-y-3">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Values (One per line)</label>
+                <textarea id="listItems" placeholder="john.doe@enterprise.com&#10;jane.smith@enterprise.com&#10;contact@enterprise.com"
+                    class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-amber-100 focus:border-amber-500 transition-all outline-none mono text-sm font-medium min-h-[250px] resize-none"></textarea>
+            </div>
+        </div>
+        <div class="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+            <button onclick="hideModal()" class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Cancel</button>
+            <button onclick="saveList()" id="saveBtn" class="px-10 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-black rounded-2xl transition-all shadow-xl shadow-slate-200 active:scale-95">Commit Changes</button>
+        </div>
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>List Name</label>
-        <input type="text" id="listName" placeholder="e.g. email_addresses" />
-        <div style="font-size:9px;color:var(--muted);margin-top:4px">Alphanumeric, dashes, underscores</div>
-      </div>
-      <div class="form-group">
-        <label>Values (one per line)</label>
-        <textarea id="listItems" placeholder="john@example.com&#10;jane@test.org&#10;user@demo.net"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:4px">
-        <button class="btn btn-primary" onclick="saveList()" style="flex:1;padding:12px" id="saveBtn">Create List</button>
-        <button class="btn" onclick="hideModal()" style="flex:0">Cancel</button>
-      </div>
-    </div>
-  </div>
 </div>
 
-<div class="toast-container" id="toastContainer"></div>
+<!-- Toasts -->
+<div id="toastContainer" class="fixed bottom-10 right-10 z-[3000] space-y-3 pointer-events-none"></div>
 
 <script>
-let lists = [];
-let editingList = null;
+    let lists = [];
+    let editingList = null;
 
-async function loadLists() {
-  const res = await fetch('/api/lists');
-  lists = await res.json();
-  renderLists();
-}
+    async function loadLists() {
+        try {
+            const res = await fetch('/api/lists');
+            lists = await res.json();
+            renderLists();
+        } catch (e) { console.error(e); }
+    }
 
-function renderLists() {
-  const grid = document.getElementById('listsGrid');
-  if (lists.length === 0) {
-    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
-      <div class="icon">≡</div>
-      <h3>No Lists Yet</h3>
-      <p>Create named lists to use with the Random replacement mode in your templates.</p>
-    </div>`;
-    return;
-  }
-  grid.innerHTML = lists.map(l => `
-    <div class="list-card">
-      <div class="list-card-header">
-        <div class="list-name">${l.name}</div>
-        <span class="list-count">${l.count} item${l.count !== 1 ? 's' : ''}</span>
-      </div>
-      <div class="list-items">
-        ${l.items.length === 0
-          ? '<div style="font-size:10px;color:var(--muted);text-align:center;padding:12px">Empty list</div>'
-          : l.items.slice(0, 8).map(item => `<div class="list-item"><span>${escHtml(item)}</span></div>`).join('')
-            + (l.items.length > 8 ? `<div style="font-size:9px;color:var(--muted);padding:4px 0">+ ${l.items.length - 8} more...</div>` : '')}
-      </div>
-      <div class="list-actions">
-        <button class="btn btn-sm" onclick="editList('${l.name}')" style="flex:1">✎ Edit</button>
-        <button class="btn btn-sm btn-danger" onclick="deleteList('${l.name}')">✕</button>
-      </div>
-    </div>
-  `).join('');
-}
+    function renderLists() {
+        const grid = document.getElementById('listsGrid');
+        if (lists.length === 0) {
+            grid.innerHTML = `
+                <div class="col-span-full py-32 flex flex-col items-center text-center">
+                    <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-5xl mb-8 shadow-2xl shadow-slate-200 border border-slate-100">≡</div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-3">No Dictionaries Found</h3>
+                    <p class="text-slate-500 max-w-sm mb-10 leading-relaxed text-sm font-medium">Create named lists to provide the transformation engine with unique values for random replacement modes.</p>
+                    <button onclick="showCreateModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-slate-200 active:scale-95">Create First Dictionary</button>
+                </div>`;
+            return;
+        }
+        grid.innerHTML = lists.map(l => `
+            <div class="bg-white border border-slate-200 rounded-[2rem] overflow-hidden card-shadow transition-all group flex flex-col">
+                <div class="p-8 border-b border-slate-50 bg-slate-50/30 flex items-center justify-between">
+                    <div>
+                        <h4 class="font-extrabold text-slate-900 truncate text-lg tracking-tight" title="${l.name}">${l.name}</h4>
+                        <p class="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">NAMED DICTIONARY</p>
+                    </div>
+                    <span class="px-3 py-1 bg-white text-amber-600 text-[9px] font-black rounded-full uppercase tracking-widest border border-slate-100 shadow-sm">${l.count} Units</span>
+                </div>
+                <div class="p-8 flex-1 min-h-[200px] overflow-y-auto bg-slate-50/10">
+                    ${l.items.length === 0
+                        ? '<div class="h-full flex items-center justify-center text-slate-400 text-xs italic">Empty Dictionary</div>'
+                        : l.items.slice(0, 8).map(item => `<div class="text-[11px] py-2 border-b border-slate-50 last:border-0 text-slate-600 font-medium truncate mono">${escHtml(item)}</div>`).join('')
+                            + (l.items.length > 8 ? `<div class="text-[10px] font-black text-slate-300 text-center uppercase tracking-[0.2em] pt-4">+ ${l.items.length - 8} more units</div>` : '')}
+                </div>
+                <div class="p-8 border-t border-slate-50 bg-slate-50/20 flex gap-3">
+                    <button onclick="editList('${l.name}')" class="flex-1 py-3 bg-white border border-slate-200 hover:border-amber-200 hover:bg-amber-50 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center justify-center gap-2 active:scale-95">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                        </svg>
+                        Edit Schema
+                    </button>
+                    <button onclick="deleteList('${l.name}')" class="w-12 h-12 border border-slate-200 bg-white hover:bg-red-50 hover:border-red-100 text-slate-300 hover:text-red-600 rounded-2xl transition-all flex items-center justify-center active:scale-95 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `).join('');
+    }
 
-function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+    function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
 
-function showCreateModal() {
-  editingList = null;
-  document.getElementById('modalTitle').textContent = 'Create New List';
-  document.getElementById('saveBtn').textContent = 'Create List';
-  document.getElementById('listName').value = '';
-  document.getElementById('listName').disabled = false;
-  document.getElementById('listItems').value = '';
-  document.getElementById('createModal').classList.remove('hidden');
-}
+    function showCreateModal() {
+        editingList = null;
+        document.getElementById('modalTitle').textContent = 'Create Dictionary';
+        document.getElementById('saveBtn').textContent = 'Commit Dictionary';
+        document.getElementById('listName').value = '';
+        document.getElementById('listName').disabled = false;
+        document.getElementById('listItems').value = '';
+        document.getElementById('createModal').classList.remove('hidden');
+    }
 
-function editList(name) {
-  const l = lists.find(x => x.name === name);
-  if (!l) return;
-  editingList = name;
-  document.getElementById('modalTitle').textContent = `Edit: ${name}`;
-  document.getElementById('saveBtn').textContent = 'Update List';
-  document.getElementById('listName').value = name;
-  document.getElementById('listName').disabled = true;
-  document.getElementById('listItems').value = l.items.join('\n');
-  document.getElementById('createModal').classList.remove('hidden');
-}
+    function editList(name) {
+        const l = lists.find(x => x.name === name);
+        if (!l) return;
+        editingList = name;
+        document.getElementById('modalTitle').textContent = `Modify Dictionary: ${name}`;
+        document.getElementById('saveBtn').textContent = 'Commit Changes';
+        document.getElementById('listName').value = name;
+        document.getElementById('listName').disabled = true;
+        document.getElementById('listItems').value = l.items.join('\n');
+        document.getElementById('createModal').classList.remove('hidden');
+    }
 
-function hideModal() { document.getElementById('createModal').classList.add('hidden'); }
+    function hideModal() { document.getElementById('createModal').classList.add('hidden'); }
 
-async function saveList() {
-  const name = document.getElementById('listName').value.trim();
-  const rawItems = document.getElementById('listItems').value;
-  const items = rawItems.split('\n').map(s => s.trim()).filter(Boolean);
+    async function saveList() {
+        const name = document.getElementById('listName').value.trim();
+        const rawItems = document.getElementById('listItems').value;
+        const items = rawItems.split('\n').map(s => s.trim()).filter(Boolean);
 
-  if (!name) { toast('List name required', 'error'); return; }
+        if (!name) return toast('Internal label required', 'error');
 
-  if (editingList) {
-    const res = await fetch(`/api/lists/update/${name}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items })
-    });
-    if (res.ok) { toast(`List "${name}" updated`, 'success'); hideModal(); await loadLists(); }
-    else toast('Failed to update', 'error');
-  } else {
-    const res = await fetch('/api/lists', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, items })
-    });
-    const data = await res.json();
-    if (data.success) { toast(`List "${name}" created`, 'success'); hideModal(); await loadLists(); }
-    else toast(data.error || 'Failed', 'error');
-  }
-}
+        const btn = document.getElementById('saveBtn');
+        const originalText = btn.textContent;
+        btn.textContent = "Processing...";
+        btn.disabled = true;
 
-async function deleteList(name) {
-  if (!confirm(`Delete list "${name}"?`)) return;
-  await fetch(`/api/lists/del/${name}`, { method: 'POST' });
-  toast(`List "${name}" deleted`, 'success');
-  await loadLists();
-}
+        try {
+            if (editingList) {
+                const res = await fetch(`/api/lists/update/${name}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ items })
+                });
+                if (res.ok) {
+                    toast(`Dictionary "${name}" synchronized`, 'success');
+                    hideModal();
+                    await loadLists();
+                } else toast('Synchronization failed', 'error');
+            } else {
+                const res = await fetch('/api/lists', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, items })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    toast(`Dictionary "${name}" initialized`, 'success');
+                    hideModal();
+                    await loadLists();
+                } else toast(data.error || 'Initialization failed', 'error');
+            }
+        } catch (e) { toast('Critical system error', 'error'); }
+        finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    }
 
-function toast(msg, type='success') {
-  const c = document.getElementById('toastContainer');
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.textContent = msg;
-  c.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
+    async function deleteList(name) {
+        if (!confirm(`Permanently wipe dictionary "${name}"? This action cannot be undone.`)) return;
+        try {
+            await fetch(`/api/lists/del/${name}`, { method: 'POST' });
+            toast(`Dictionary purged`, 'success');
+            await loadLists();
+        } catch (e) { toast('Purge failed', 'error'); }
+    }
 
-loadLists();
+    function toast(msg, type = "success") {
+        const c = document.getElementById('toastContainer');
+        const el = document.createElement('div');
+        el.className = `p-5 rounded-2xl border shadow-2xl transform transition-all pointer-events-auto flex items-center gap-4 bg-white ${
+            type === 'success' ? 'border-emerald-100 text-emerald-800' : 'border-red-100 text-red-800'
+        }`;
+        el.style.transform = "translateX(20px)";
+        el.style.opacity = "0";
+        
+        el.innerHTML = `
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center ${type==='success'?'bg-emerald-50':'bg-red-50'}">
+                <div class="w-2 h-2 rounded-full ${type==='success'?'bg-emerald-500':'bg-red-500'}"></div>
+            </div>
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.15em] opacity-50 mb-0.5">${type==='success'?'Operation Success':'System Alert'}</p>
+                <p class="text-xs font-bold leading-none">${msg}</p>
+            </div>
+        `;
+        c.appendChild(el);
+        
+        requestAnimationFrame(() => {
+            el.style.transform = "translateX(0)";
+            el.style.opacity = "1";
+        });
+
+        setTimeout(() => {
+            el.style.transform = "translateX(20px)";
+            el.style.opacity = "0";
+            setTimeout(() => el.remove(), 400);
+        }, 4000);
+    }
+
+    loadLists();
 </script>
 </body>
 </html>

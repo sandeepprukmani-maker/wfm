@@ -233,5 +233,44 @@ def delete_list(name):
     if os.path.exists(p): os.remove(p)
     return jsonify({"success":True})
 
+CONFIG_FILE = "config.json"
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        return json.load(open(CONFIG_FILE))
+    return {"default_count": 5}
+
+def save_config(config):
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=2)
+
+@app.route("/api/config", methods=["GET"])
+def get_config():
+    return jsonify(load_config())
+
+@app.route("/api/config", methods=["POST"])
+def update_config():
+    save_config(request.json)
+    return jsonify({"success": True})
+
+@app.route("/api/templates/bulk-download", methods=["POST"])
+def bulk_download():
+    data = request.json
+    template_names = data.get("templates", [])
+    count = max(1, min(int(data.get("count", 1)), 500))
+    
+    zip_buf = BytesIO()
+    with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for name in template_names:
+            sp = os.path.join(SAMPLES_DIR, f"{name}.txt")
+            if not os.path.exists(sp): continue
+            with open(sp, "rb") as f: raw = f.read()
+            rules = load_rules(name)
+            for i in range(1, count + 1):
+                zf.writestr(f"{name}/{name}_{i:04d}.txt", process_email(raw, rules))
+                
+    zip_buf.seek(0)
+    return send_file(zip_buf, as_attachment=True, download_name=f"bulk_samples_{count}.zip", mimetype="application/zip")
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True, port=5000)

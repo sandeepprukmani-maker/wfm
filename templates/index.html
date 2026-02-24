@@ -1,775 +1,727 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EML Transformation Engine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface2: #f1f5f9;
-  --border: #e2e8f0;
-  --border-hi: #cbd5e1;
-  --accent: #2563eb;
-  --accent-glow: rgba(37,99,235,0.05);
-  --green: #059669;
-  --green-glow: rgba(5,150,105,0.05);
-  --red: #dc2626;
-  --yellow: #d97706;
-  --text: #1e293b;
-  --muted: #64748b;
-  --sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --mono: 'JetBrains Mono', monospace;
-}
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; line-height: 1.5; }
-
-body::before { display: none; }
-
-/* ── TOPBAR ────────────────────────────────────────────────────────── */
-.topbar {
-  position: sticky; top: 0; z-index: 50;
-  background: #ffffff;
-  border-bottom: 1px solid var(--border);
-  padding: 0 32px;
-  display: flex; align-items: center; justify-content: space-between;
-  height: 64px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-.logo { display: flex; align-items: center; gap: 12px; }
-.logo-icon {
-  width: 32px; height: 32px; background: var(--accent);
-  border-radius: 6px;
-  display: grid; place-items: center;
-  font-size: 16px; color: #fff;
-}
-.logo-text { font-family: var(--sans); font-weight: 700; font-size: 18px; color: var(--text); }
-.logo-text span { color: var(--accent); }
-.logo-sub { display: none; }
-
-.topbar-nav { display: flex; gap: 4px; }
-.nav-link {
-  padding: 7px 14px; font-family: var(--mono); font-size: 10px;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--muted); text-decoration: none;
-  border-radius: 4px; transition: all 0.15s;
-  border: 1px solid transparent;
-}
-.nav-link:hover, .nav-link.active {
-  color: var(--text); background: var(--surface2); border-color: var(--border-hi);
-}
-.topbar-right { display: flex; align-items: center; gap: 10px; }
-.pulse-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
-  animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
-
-/* ── BUTTONS ───────────────────────────────────────────────────────── */
-.btn {
-  padding: 8px 16px; font-family: var(--mono); font-size: 10px;
-  letter-spacing: 0.08em; text-transform: uppercase;
-  border: 1px solid var(--border-hi); background: transparent;
-  color: var(--text); cursor: pointer; border-radius: 4px;
-  transition: all 0.15s; white-space: nowrap;
-}
-.btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn-primary:hover { background: #7577f5; border-color: #7577f5; color: #fff; }
-.btn-green { background: var(--green-glow); border-color: var(--green); color: var(--green); }
-.btn-green:hover { background: rgba(16,217,160,0.2); }
-.btn-danger { border-color: var(--red); color: var(--red); }
-.btn-danger:hover { background: rgba(240,79,122,0.1); }
-.btn-sm { padding: 5px 10px; font-size: 9px; }
-.btn-xs { padding: 3px 8px; font-size: 9px; border-radius: 3px; }
-.btn-icon {
-  width: 28px; height: 28px; padding: 0; display: grid; place-items: center;
-  font-size: 14px; border-radius: 4px;
-}
-
-/* ── MAIN CONTENT ──────────────────────────────────────────────────── */
-.page { position: relative; z-index: 1; padding: 32px; max-width: 1400px; margin: 0 auto; }
-
-.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
-.page-title { font-family: var(--sans); font-size: 28px; font-weight: 800; }
-.page-title span { color: var(--green); }
-.page-subtitle { font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.1em; }
-
-/* ── CARDS GRID ────────────────────────────────────────────────────── */
-.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
-
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.card:hover {
-  border-color: var(--border-hi);
-  box-shadow: 0 0 30px rgba(99,102,241,0.07);
-}
-
-.card-header {
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid var(--border);
-  background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
-}
-.card-title-block { flex: 1; min-width: 0; }
-.card-name {
-  font-family: var(--sans); font-size: 15px; font-weight: 700;
-  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.card-meta { margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; border-radius: 3px; font-size: 9px;
-  letter-spacing: 0.1em; text-transform: uppercase;
-}
-.badge-accent { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(99,102,241,0.3); }
-.badge-green  { background: var(--green-glow);  color: var(--green);  border: 1px solid rgba(16,217,160,0.3); }
-.badge-yellow { background: rgba(245,166,35,0.1); color: var(--yellow); border: 1px solid rgba(245,166,35,0.3); }
-.badge-muted  { background: rgba(90,90,122,0.1); color: var(--muted); border: 1px solid var(--border-hi); }
-
-.card-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
-
-/* ── RULES PREVIEW ─────────────────────────────────────────────────── */
-.rules-preview { flex: 1; padding: 12px 18px; min-height: 80px; }
-.rules-empty { color: var(--muted); font-size: 10px; text-align: center; padding: 20px 0; }
-.rule-row-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid rgba(30,30,48,0.8);
-  font-size: 11px;
-}
-.rule-row-label:last-child { border-bottom: none; }
-.rule-label-text {
-  font-family: var(--mono);
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.rule-label-text .underscore-sep { color: var(--accent); }
-.rule-mode-pill {
-  font-size: 8px; padding: 1px 5px; border-radius: 2px; margin-left: 4px;
-  background: rgba(99,102,241,0.15); color: var(--accent);
-  vertical-align: middle;
-}
-.rule-mode-dynamic { background: rgba(16,217,160,0.12); color: var(--green); }
-.rule-mode-random  { background: rgba(240,79,122,0.12); color: var(--red); }
-
-.more-rules { font-size: 9px; color: var(--muted); padding: 6px 0 2px; text-align: center; }
-
-/* ── CARD FOOTER ───────────────────────────────────────────────────── */
-.card-footer {
-  padding: 12px 18px;
-  border-top: 1px solid var(--border);
-  background: rgba(255,255,255,0.01);
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-}
-.counter-block { display: flex; align-items: center; gap: 0; }
-.counter-label { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-right: 8px; }
-.counter-btn {
-  width: 28px; height: 28px; border: 1px solid var(--border-hi);
-  background: var(--surface2); color: var(--text); cursor: pointer;
-  font-size: 14px; font-family: var(--mono);
-  display: grid; place-items: center;
-  transition: all 0.12s;
-}
-.counter-btn:first-of-type { border-radius: 4px 0 0 4px; }
-.counter-btn:last-of-type  { border-radius: 0 4px 4px 0; }
-.counter-btn:hover { background: var(--border-hi); color: var(--accent); }
-.counter-val {
-  min-width: 40px; height: 28px;
-  border-top: 1px solid var(--border-hi);
-  border-bottom: 1px solid var(--border-hi);
-  background: var(--bg);
-  font-size: 12px; font-weight: 700;
-  display: grid; place-items: center;
-  color: var(--text);
-}
-.download-btn {
-  display: flex; align-items: center; gap: 7px;
-  padding: 7px 14px;
-  background: var(--green-glow); border: 1px solid var(--green);
-  color: var(--green); cursor: pointer; border-radius: 4px;
-  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
-  transition: all 0.15s;
-}
-.download-btn:hover { background: rgba(16,217,160,0.22); }
-.download-btn.loading { opacity: 0.6; pointer-events: none; }
-
-/* ── EMPTY STATE ───────────────────────────────────────────────────── */
-.empty-page {
-  text-align: center; padding: 80px 20px;
-  grid-column: 1/-1;
-}
-.empty-page .big-icon { font-size: 56px; opacity: 0.15; margin-bottom: 20px; }
-.empty-page h2 { font-family: var(--sans); font-size: 22px; font-weight: 700; color: var(--text); opacity: 0.4; margin-bottom: 10px; }
-.empty-page p { font-size: 11px; color: var(--muted); max-width: 340px; margin: 0 auto 24px; line-height: 1.8; }
-
-/* ── MODALS ────────────────────────────────────────────────────────── */
-.overlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,0.75);
-  backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-  animation: fadeIn 0.15s ease;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal {
-  background: var(--surface);
-  border: 1px solid var(--border-hi);
-  border-radius: 8px;
-  width: 100%; max-width: 740px;
-  max-height: 90vh;
-  display: flex; flex-direction: column;
-  animation: slideUp 0.2s ease;
-}
-.modal-sm { max-width: 460px; }
-@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-.modal-header {
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
-.modal-title { font-family: var(--sans); font-size: 16px; font-weight: 700; }
-.modal-title span { color: var(--accent); }
-.modal-body { flex: 1; overflow-y: auto; padding: 22px; }
-.modal-footer {
-  padding: 14px 22px;
-  border-top: 1px solid var(--border);
-  display: flex; gap: 8px; justify-content: flex-end;
-  flex-shrink: 0;
-}
-.close-btn {
-  width: 30px; height: 30px; border-radius: 4px;
-  border: 1px solid var(--border-hi); background: transparent;
-  color: var(--muted); cursor: pointer; font-size: 14px;
-  display: grid; place-items: center; transition: all 0.12s;
-}
-.close-btn:hover { color: var(--text); border-color: var(--text); }
-
-/* ── FORM ELEMENTS ─────────────────────────────────────────────────── */
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
-.form-input, .form-select, .form-textarea {
-  background: var(--bg); border: 1px solid var(--border-hi);
-  color: var(--text); padding: 9px 12px;
-  font-family: var(--mono); font-size: 11px;
-  border-radius: 4px; outline: none; width: 100%;
-  transition: border-color 0.15s;
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
-.form-select option { background: var(--surface); }
-.form-textarea { min-height: 80px; resize: vertical; }
-input[type="file"] {
-  background: var(--bg); border: 1px solid var(--border-hi);
-  color: var(--text); padding: 8px 12px;
-  font-family: var(--mono); font-size: 11px;
-  border-radius: 4px; cursor: pointer; width: 100%;
-}
-.form-note { font-size: 9px; color: var(--muted); margin-top: 2px; }
-
-/* ── RULES TABLE ───────────────────────────────────────────────────── */
-.rules-table { width: 100%; border-collapse: collapse; }
-.rules-table th {
-  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--muted); padding: 10px 10px; text-align: left;
-  border-bottom: 1px solid var(--border);
-}
-.rules-table td { padding: 8px 10px; border-bottom: 1px solid rgba(30,30,48,0.6); vertical-align: middle; }
-.rules-table tr:hover td { background: rgba(255,255,255,0.015); }
-.rules-table .form-input, .rules-table .form-select { font-size: 10px; padding: 6px 9px; }
-.rule-num { font-size: 10px; color: var(--muted); font-weight: 700; }
-
-/* ── PREVIEW ───────────────────────────────────────────────────────── */
-.preview-pre {
-  font-family: var(--mono); font-size: 10px; line-height: 1.9;
-  white-space: pre-wrap; word-break: break-all;
-  color: var(--green); background: var(--bg);
-  border: 1px solid var(--border); border-radius: 4px;
-  padding: 16px; max-height: 500px; overflow-y: auto;
-}
-
-/* ── TOAST ─────────────────────────────────────────────────────────── */
-.toasts { position: fixed; bottom: 24px; right: 24px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
-.toast {
-  padding: 11px 16px; background: var(--surface2);
-  border: 1px solid var(--border-hi); border-radius: 4px;
-  font-size: 11px; max-width: 320px;
-  animation: toastIn 0.2s ease;
-}
-.toast-ok  { border-color: var(--green); color: var(--green); }
-.toast-err { border-color: var(--red); color: var(--red); }
-@keyframes toastIn { from { transform: translateX(16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-.hidden { display: none !important; }
-.divider { height: 1px; background: var(--border); margin: 16px 0; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EML Engine — Professional Email Transformation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark-glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 4px 20px -5px rgba(0, 0, 0, 0.02);
+        }
+        .card-shadow:hover {
+            box-shadow: 0 20px 40px -15px rgba(59, 130, 246, 0.1), 0 10px 20px -10px rgba(59, 130, 246, 0.05);
+        }
+    </style>
 </head>
-<body>
+<body class="bg-[#f8fafc] text-slate-900 h-full selection:bg-blue-100">
 
-<!-- ── TOPBAR ─────────────────────────────────────────────────────────── -->
-<header class="topbar">
-  <div class="logo">
-    <div class="logo-icon">⚡</div>
-    <div>
-      <div class="logo-text">EML <span>Engine</span></div>
-      <div class="logo-sub">Transformation System</div>
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div class="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-50 rounded-full blur-[120px] opacity-60"></div>
+    <div class="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-emerald-50 rounded-full blur-[100px] opacity-40"></div>
+</div>
+
+<header class="sticky top-0 z-[100] px-8 py-4 glass border-b border-slate-200/60 flex items-center justify-between mx-4 mt-4 rounded-2xl">
+    <div class="flex items-center gap-4">
+        <div class="w-11 h-11 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-xl shadow-slate-200 group transition-transform hover:scale-105">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 group-hover:animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+        </div>
+        <div>
+            <h1 class="font-bold text-xl tracking-tight text-slate-900">EML<span class="text-blue-600">ENGINE</span></h1>
+            <div class="flex items-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <p class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold">Transformation Core v2.0</p>
+            </div>
+        </div>
     </div>
-  </div>
-  <nav class="topbar-nav">
-    <a href="/" class="nav-link active">◈ Templates</a>
-    <a href="/lists" class="nav-link">≡ Lists</a>
-  </nav>
-  <div class="topbar-right">
-    <div class="pulse-dot"></div>
-    <button class="btn btn-primary" onclick="openUploadModal()">+ Upload Template</button>
-  </div>
+    
+    <nav class="hidden lg:flex items-center bg-slate-100/50 p-1.5 rounded-xl border border-slate-200/50">
+        <a href="/" class="px-5 py-2 text-sm font-semibold text-blue-600 bg-white rounded-lg shadow-sm border border-blue-100 transition-all">Templates</a>
+        <a href="/lists" class="px-5 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-all">Dictionaries</a>
+        <button onclick="openConfigModal()" class="px-5 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-all">System Config</button>
+    </nav>
+
+    <div class="flex items-center gap-3">
+        <button onclick="openUploadModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-lg shadow-slate-200 flex items-center gap-2 active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+            </svg>
+            Import EML
+        </button>
+    </div>
 </header>
 
-<!-- ── MAIN PAGE ──────────────────────────────────────────────────────── -->
-<main class="page">
-  <div class="page-header">
-    <div>
-      <div class="page-title">Email <span>Templates</span></div>
-      <div class="page-subtitle">MIME-aware · Journaled · Encoded content · Rule-driven transformation</div>
+<main class="max-w-7xl mx-auto px-8 py-12">
+    <div class="flex flex-col items-center text-center mb-16">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-extrabold uppercase tracking-widest mb-6">
+            Enterprise Grade Transformation
+        </div>
+        <h2 class="text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
+            Transform <span class="gradient-text">Email Templates</span><br/>with Precision Rules
+        </h2>
+        <p class="text-slate-500 text-lg max-w-2xl leading-relaxed">
+            Automated MIME-aware processing for journaled emails. Define replacement logic, randomize content, and bulk generate samples in seconds.
+        </p>
+        <div id="templateCount" class="mt-8 text-[11px] font-bold text-slate-400 uppercase tracking-[0.25em]"></div>
     </div>
-    <div id="templateCount" style="font-size:11px;color:var(--muted)"></div>
-  </div>
-  <div class="cards-grid" id="cardsGrid">
-    <div class="empty-page">
-      <div class="big-icon">📧</div>
-      <h2>No Templates Yet</h2>
-      <p>Upload a raw .eml file to get started. Each template stores its own transformation rules.</p>
-      <button class="btn btn-primary" onclick="openUploadModal()">+ Upload First Template</button>
+
+    <!-- Bulk Actions Bar -->
+    <div id="bulkActionBar" class="mb-8 p-5 glass border border-slate-200/80 rounded-2xl flex flex-wrap items-center justify-between gap-4 shadow-sm hidden">
+        <div class="flex items-center gap-6">
+            <label class="flex items-center gap-3 cursor-pointer group select-none">
+                <div class="relative flex items-center justify-center">
+                    <input type="checkbox" id="selectAll" class="peer appearance-none w-5 h-5 rounded-md border-2 border-slate-300 checked:bg-blue-600 checked:border-blue-600 transition-all cursor-pointer">
+                    <svg class="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                        <path d="M5 13l4 4L19 7" />
+                    </svg>
+                </div>
+                <span class="text-xs font-bold text-slate-600 uppercase tracking-widest group-hover:text-slate-900 transition-colors">Select All Templates</span>
+            </label>
+            <div class="h-6 w-px bg-slate-200"></div>
+            <div class="flex items-center gap-2">
+                <span id="selectedCount" class="text-[10px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-md tracking-tighter">0</span>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">SELECTED</span>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="flex items-center bg-slate-100/80 p-1 rounded-xl border border-slate-200/50">
+                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3">Batch Size</span>
+                <input type="number" id="globalDownloadCount" value="5" min="1" max="500" 
+                    class="w-16 h-8 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-900 text-center outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+            </div>
+            <button onclick="doBulkDownload()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-200 flex items-center gap-2 active:scale-95">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+                Run Batch Export
+            </button>
+        </div>
     </div>
-  </div>
+
+    <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <!-- Empty State -->
+        <div class="col-span-full py-32 flex flex-col items-center text-center">
+            <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-5xl mb-8 shadow-2xl shadow-slate-200 border border-slate-100">📂</div>
+            <h3 class="text-2xl font-bold text-slate-900 mb-3">Workspace Empty</h3>
+            <p class="text-slate-500 max-w-sm mb-10 leading-relaxed text-sm font-medium">No templates detected in the engine. Upload a raw email file to begin configuring your transformation logic.</p>
+            <button onclick="openUploadModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-slate-200 active:scale-95">Import First Template</button>
+        </div>
+    </div>
 </main>
 
-<!-- ── UPLOAD MODAL ───────────────────────────────────────────────────── -->
-<div class="overlay hidden" id="uploadOverlay">
-  <div class="modal modal-sm">
-    <div class="modal-header">
-      <div class="modal-title">Upload <span>Template</span></div>
-      <button class="close-btn" onclick="closeUploadModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="form-group">
-          <label class="form-label">Template Name</label>
-          <input type="text" class="form-input" id="uploadName" placeholder="e.g. invoice_template" />
-          <div class="form-note">Alphanumeric, dashes, underscores only</div>
+<!-- Upload Modal -->
+<div id="uploadOverlay" class="fixed inset-0 z-[1000] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-white/20">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+                <h3 class="font-bold text-slate-900 text-lg">Import Template</h3>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">MIME Source File</p>
+            </div>
+            <button onclick="closeUploadModal()" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
-        <div class="form-group">
-          <label class="form-label">EML / TXT File</label>
-          <input type="file" id="uploadFile" accept=".txt,.eml" />
-          <div class="form-note">Raw email content as plain text</div>
+        <div class="p-8 space-y-8">
+            <div class="space-y-3">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Internal Label</label>
+                <input type="text" id="uploadName" placeholder="e.g. system_invoice_v1" 
+                    class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none mono text-sm font-medium">
+            </div>
+            <div class="space-y-3">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Source Document</label>
+                <div class="relative group">
+                    <input type="file" id="uploadFile" accept=".txt,.eml" class="hidden">
+                    <button onclick="document.getElementById('uploadFile').click()" class="w-full px-5 py-8 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center gap-3 hover:bg-blue-50 hover:border-blue-200 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-300 group-hover:text-blue-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span class="text-xs font-bold text-slate-500 group-hover:text-blue-600 transition-colors">Select .eml or .txt file</span>
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
+        <div class="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+            <button onclick="closeUploadModal()" class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Cancel</button>
+            <button onclick="doUpload()" class="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-2xl transition-all shadow-xl shadow-slate-200 active:scale-95">Complete Import</button>
+        </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn" onclick="closeUploadModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="doUpload()">Upload Template</button>
-    </div>
-  </div>
 </div>
 
-<!-- ── EDIT RULES MODAL ───────────────────────────────────────────────── -->
-<div class="overlay hidden" id="editOverlay">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Edit Rules — <span id="editTemplateName"></span></div>
-      <button class="close-btn" onclick="closeEditModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <!-- Mode reference -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px">
-          <span class="badge badge-accent">Static</span>
-          <p style="font-size:9px;color:var(--muted);margin-top:7px;line-height:1.7">Fixed replacement text. Exact value used every time.</p>
+<!-- Edit Rules Modal -->
+<div id="editOverlay" class="fixed inset-0 z-[1000] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-6 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-white/20">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+                <h3 class="font-extrabold text-slate-900 text-xl tracking-tight">Logic Engine <span class="text-blue-600" id="editTemplateName"></span></h3>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Rule Configuration Pipeline</p>
+            </div>
+            <button onclick="closeEditModal()" class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
         </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px">
-          <span class="badge badge-green">Dynamic</span>
-          <p style="font-size:9px;color:var(--muted);margin-top:7px;line-height:1.8">
-            <code style="color:var(--green)">generate_uuid()</code><br>
-            <code style="color:var(--green)">generate_random_email()</code><br>
-            <code style="color:var(--green)">current_timestamp()</code><br>
-            <code style="color:var(--accent)">build_subject()</code>
-            <span style="color:var(--muted);font-size:8px;display:block;margin-top:3px">Builds subject as FROM_replacewith using other rule names</span>
-          </p>
+        <div class="p-8 overflow-y-auto space-y-10 flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="p-6 bg-blue-50/50 border border-blue-100 rounded-2xl">
+                    <span class="inline-flex px-2 py-1 bg-blue-600 text-white text-[9px] font-black uppercase rounded tracking-[0.2em] mb-4">Static Mode</span>
+                    <p class="text-xs text-slate-600 font-medium leading-relaxed">Direct substitution. Every occurrence of the target string is replaced with your defined constant value.</p>
+                </div>
+                <div class="p-6 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
+                    <span class="inline-flex px-2 py-1 bg-emerald-600 text-white text-[9px] font-black uppercase rounded tracking-[0.2em] mb-4">Dynamic Mode</span>
+                    <div class="space-y-2 mt-2">
+                        <code class="block text-[10px] text-emerald-700 font-bold">generate_uuid()</code>
+                        <code class="block text-[10px] text-emerald-700 font-bold">generate_random_email()</code>
+                        <code class="block text-[10px] text-emerald-700 font-bold">current_timestamp()</code>
+                    </div>
+                </div>
+                <div class="p-6 bg-amber-50/50 border border-amber-100 rounded-2xl">
+                    <span class="inline-flex px-2 py-1 bg-amber-600 text-white text-[9px] font-black uppercase rounded tracking-[0.2em] mb-4">Random Mode</span>
+                    <p class="text-xs text-slate-600 font-medium leading-relaxed italic">Selects a unique entry from your global dictionaries on every generation cycle.</p>
+                </div>
+            </div>
+
+            <div class="relative overflow-hidden rounded-2xl border border-slate-200">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
+                            <th class="py-5 px-6 w-16 text-center">ID</th>
+                            <th class="py-5 px-6">Source Pattern</th>
+                            <th class="py-5 px-6 w-48">Logic Mode</th>
+                            <th class="py-5 px-6">Replacement Map</th>
+                            <th class="py-5 px-6 w-16"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="editRulesBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+                <div id="editRulesEmpty" class="py-20 text-center text-slate-400 italic font-medium text-sm bg-slate-50/30 hidden">Initialize the pipeline by adding your first rule.</div>
+            </div>
         </div>
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px">
-          <span class="badge badge-yellow">Random</span>
-          <p style="font-size:9px;color:var(--muted);margin-top:7px;line-height:1.7">Picks randomly from a named list. Manage lists in <a href="/lists" style="color:var(--accent)">Lists page</a>.</p>
+        <div class="px-8 py-6 bg-slate-50 border-t border-slate-200/60 flex items-center justify-between">
+            <button onclick="addEditRule()" class="px-6 py-3 border-2 border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700 rounded-2xl text-sm font-extrabold transition-all flex items-center gap-2 active:scale-95 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Append New Rule
+            </button>
+            <div class="flex gap-4">
+                <button onclick="previewTemplate()" class="px-6 py-3 text-slate-500 hover:text-slate-900 font-bold text-sm transition-all hover:bg-slate-100 rounded-2xl">
+                    Dry Run Preview
+                </button>
+                <button onclick="saveEditRules()" class="px-10 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-black rounded-2xl transition-all shadow-xl shadow-slate-200 flex items-center gap-2 active:scale-95">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    Commit Rule Changes
+                </button>
+            </div>
         </div>
-      </div>
-      <div class="divider"></div>
-      <table class="rules-table" id="editRulesTable">
-        <thead>
-          <tr>
-            <th style="width:36px">#</th>
-            <th>Find What</th>
-            <th style="width:130px">Mode</th>
-            <th>Replace With</th>
-            <th style="width:44px"></th>
-          </tr>
-        </thead>
-        <tbody id="editRulesBody"></tbody>
-      </table>
-      <div id="editRulesEmpty" class="rules-empty hidden">No rules yet — add one below</div>
     </div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn btn-green btn-sm" onclick="addEditRule()">+ Add Rule</button>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-sm" onclick="previewTemplate()">⬡ Preview</button>
-        <button class="btn btn-primary btn-sm" onclick="saveEditRules()">✓ Save Rules</button>
-      </div>
-    </div>
-  </div>
 </div>
 
-<!-- ── PREVIEW MODAL ──────────────────────────────────────────────────── -->
-<div class="overlay hidden" id="previewOverlay">
-  <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title">Preview — <span style="color:var(--green)" id="previewTitle"></span></div>
-      <button class="close-btn" onclick="document.getElementById('previewOverlay').classList.add('hidden')">✕</button>
+<!-- Preview Modal -->
+<div id="previewOverlay" class="fixed inset-0 z-[2000] bg-slate-950/80 backdrop-blur-xl flex items-center justify-center p-8 hidden">
+    <div class="bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden border border-white/10">
+        <div class="px-10 py-8 border-b border-slate-800 flex items-center justify-between">
+            <div>
+                <h3 class="font-bold text-white text-lg">MIME Output Preview</h3>
+                <p id="previewTitle" class="text-blue-400 font-bold uppercase tracking-[0.3em] text-[10px] mt-1"></p>
+            </div>
+            <button onclick="document.getElementById('previewOverlay').classList.add('hidden')" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-800 text-slate-400 hover:text-white transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="flex-1 overflow-auto p-0 scrollbar-hide">
+            <pre id="previewContent" class="mono text-[12px] leading-relaxed p-10 text-slate-300 bg-slate-950/50 h-full"></pre>
+        </div>
     </div>
-    <div class="modal-body">
-      <pre class="preview-pre" id="previewContent">Loading...</pre>
-    </div>
-  </div>
 </div>
 
-<!-- ── TOASTS ─────────────────────────────────────────────────────────── -->
-<div class="toasts" id="toasts"></div>
+<!-- Config Modal -->
+<div id="configOverlay" class="fixed inset-0 z-[1000] bg-slate-900/40 backdrop-blur-md flex items-center justify-center p-6 hidden">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-white/20">
+        <div class="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div>
+                <h3 class="font-bold text-slate-900 text-lg">System Parameters</h3>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Global Defaults</p>
+            </div>
+            <button onclick="closeConfigModal()" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-900 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-8 space-y-6">
+            <div class="space-y-3">
+                <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Batch Size</label>
+                <div class="relative">
+                    <input type="number" id="configDefaultCount" min="1" max="500" 
+                        class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all outline-none mono text-sm font-bold">
+                    <span class="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase tracking-widest">FILES</span>
+                </div>
+                <p class="text-[10px] text-slate-400 leading-relaxed font-medium">Standard quantity used for new template initialization and batch exports.</p>
+            </div>
+        </div>
+        <div class="px-8 py-6 bg-slate-50/50 border-t border-slate-100 flex justify-end gap-3">
+            <button onclick="closeConfigModal()" class="px-6 py-3 text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Cancel</button>
+            <button onclick="saveConfig()" class="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-black rounded-2xl transition-all shadow-xl shadow-slate-200 active:scale-95">Apply Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toasts -->
+<div id="toasts" class="fixed bottom-10 right-10 z-[3000] space-y-3 pointer-events-none"></div>
 
 <script>
-// ── STATE ──────────────────────────────────────────────────────────────
-let templates = [];
-let availableLists = [];
-let editingTemplate = null;
-let editRules = [];
-const counters = {}; // { templateName: count }
+    let templates = [];
+    let availableLists = [];
+    let editingTemplate = null;
+    let editRules = [];
+    const counters = {};
 
-const HEADER_OPTIONS = ['FROM','TO','CC','BCC','SUBJECT'];
-const DYNAMIC_FNS = ['generate_uuid','generate_random_email','current_timestamp','build_subject'];
+    const HEADER_OPTIONS = ['FROM','TO','CC','BCC','SUBJECT'];
+    const DYNAMIC_FNS = ['generate_uuid','generate_random_email','current_timestamp','build_subject'];
 
-// ── INIT ───────────────────────────────────────────────────────────────
-async function init() {
-  await Promise.all([loadLists(), loadTemplates()]);
-}
-
-async function loadLists() {
-  const r = await fetch('/api/lists');
-  availableLists = (await r.json()).map(l => l.name);
-}
-
-async function loadTemplates() {
-  const r = await fetch('/api/templates');
-  templates = await r.json();
-  renderCards();
-}
-
-// ── RENDER CARDS ───────────────────────────────────────────────────────
-function renderCards() {
-  const grid = document.getElementById('cardsGrid');
-  const count = document.getElementById('templateCount');
-
-  if (templates.length === 0) {
-    count.textContent = '';
-    grid.innerHTML = `<div class="empty-page">
-      <div class="big-icon">📧</div>
-      <h2>No Templates Yet</h2>
-      <p>Upload a raw .eml file to get started. Each template stores its own transformation rules.</p>
-      <button class="btn btn-primary" onclick="openUploadModal()">+ Upload First Template</button>
-    </div>`;
-    return;
-  }
-
-  count.textContent = `${templates.length} template${templates.length !== 1 ? 's' : ''}`;
-
-  grid.innerHTML = templates.map(t => {
-    if (!(t.name in counters)) counters[t.name] = 5;
-    const cnt = counters[t.name];
-    const rules = t.rules || [];
-    const preview = rules.slice(0, 4);
-    const extra = rules.length - preview.length;
-    return `
-    <div class="card" id="card-${esc(t.name)}">
-      <div class="card-header">
-        <div class="card-title-block">
-          <div class="card-name" title="${esc(t.name)}">${esc(t.name)}</div>
-          <div class="card-meta">
-            <span class="badge badge-accent">${rules.length} rule${rules.length !== 1 ? 's' : ''}</span>
-            ${rules.some(r=>r.mode==='dynamic') ? '<span class="badge badge-green">dynamic</span>' : ''}
-            ${rules.some(r=>r.mode==='random')  ? '<span class="badge badge-yellow">random</span>'  : ''}
-          </div>
-        </div>
-        <div class="card-header-actions">
-          <button class="btn btn-sm" onclick="openEditModal('${esc(t.name)}')" title="Edit rules">✎ Edit</button>
-          <button class="btn btn-sm" onclick="quickAddRule('${esc(t.name)}')" title="Add a rule">＋ Rule</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${esc(t.name)}')" title="Delete template">✕</button>
-        </div>
-      </div>
-
-      <div class="rules-preview">
-        ${rules.length === 0
-          ? '<div class="rules-empty">No rules configured — click Edit or + Rule to add</div>'
-          : preview.map(r => {
-              const find = (r.find_what || '').toUpperCase();
-              const rw   = r.replace_with || '';
-              const label = rw
-                ? `${find}<span style="color:var(--accent)">_</span>${rw}`
-                : find || '—';
-              const modeClass = r.mode === 'dynamic' ? 'rule-mode-dynamic' : r.mode === 'random' ? 'rule-mode-random' : '';
-              return `<div class="rule-row-label">
-                <span class="rule-mode-pill ${modeClass}">${r.mode}</span>
-                <span class="rule-label-text">${label}</span>
-              </div>`;
-            }).join('')
-          + (extra > 0 ? `<div class="more-rules">+ ${extra} more rule${extra !== 1 ? 's' : ''}</div>` : '')
-        }
-      </div>
-
-      <div class="card-footer">
-        <div class="counter-block">
-          <span class="counter-label">Samples</span>
-          <button class="counter-btn" onclick="adjustCount('${esc(t.name)}', -1)">−</button>
-          <div class="counter-val" id="counter-${esc(t.name)}">${cnt}</div>
-          <button class="counter-btn" onclick="adjustCount('${esc(t.name)}', 1)">+</button>
-        </div>
-        <button class="download-btn" id="dl-${esc(t.name)}" onclick="downloadTemplate('${esc(t.name)}')">
-          <span>↓</span> Download ${cnt === 1 ? '.txt' : `.zip (${cnt})`}
-        </button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;'); }
-
-// ── COUNTER ────────────────────────────────────────────────────────────
-function adjustCount(name, delta) {
-  counters[name] = Math.max(1, Math.min(500, (counters[name] || 5) + delta));
-  const el = document.getElementById(`counter-${name}`);
-  const dl = document.getElementById(`dl-${name}`);
-  if (el) el.textContent = counters[name];
-  if (dl) dl.innerHTML = `<span>↓</span> Download ${counters[name] === 1 ? '.txt' : `.zip (${counters[name]})`}`;
-}
-
-// ── DOWNLOAD ───────────────────────────────────────────────────────────
-function downloadTemplate(name) {
-  const count = counters[name] || 5;
-  const btn = document.getElementById(`dl-${name}`);
-  btn.classList.add('loading');
-  btn.innerHTML = `<span>⟳</span> Generating...`;
-  const a = document.createElement('a');
-  a.href = `/api/templates/download/${encodeURIComponent(name)}?count=${count}`;
-  a.click();
-  setTimeout(() => {
-    btn.classList.remove('loading');
-    btn.innerHTML = `<span>↓</span> Download ${count === 1 ? '.txt' : `.zip (${count})`}`;
-    toast(`Downloaded ${count} sample${count!==1?'s':''} for "${name}"`, 'ok');
-  }, 1500);
-}
-
-// ── DELETE ─────────────────────────────────────────────────────────────
-async function deleteTemplate(name) {
-  if (!confirm(`Delete template "${name}" and all its rules?`)) return;
-  await fetch(`/api/templates/del/${encodeURIComponent(name)}`, { method: 'POST' });
-  toast(`Template "${name}" deleted`, 'ok');
-  await loadTemplates();
-}
-
-// ── UPLOAD ─────────────────────────────────────────────────────────────
-function openUploadModal()  { document.getElementById('uploadOverlay').classList.remove('hidden'); }
-function closeUploadModal() { document.getElementById('uploadOverlay').classList.add('hidden'); }
-
-async function doUpload() {
-  const name = document.getElementById('uploadName').value.trim();
-  const file = document.getElementById('uploadFile').files[0];
-  if (!name || !file) { toast('Name and file are required', 'err'); return; }
-  const fd = new FormData();
-  fd.append('name', name);
-  fd.append('file', file);
-  const r = await fetch('/api/templates', { method: 'POST', body: fd });
-  const d = await r.json();
-  if (d.success) {
-    toast(`Template "${name}" uploaded`, 'ok');
-    closeUploadModal();
-    document.getElementById('uploadName').value = '';
-    document.getElementById('uploadFile').value = '';
-    await loadTemplates();
-  } else {
-    toast(d.error || 'Upload failed', 'err');
-  }
-}
-
-// ── QUICK ADD RULE (opens edit modal then adds a rule) ─────────────────
-async function quickAddRule(name) {
-  await openEditModal(name);
-  addEditRule();
-}
-
-// ── EDIT MODAL ─────────────────────────────────────────────────────────
-async function openEditModal(name) {
-  editingTemplate = name;
-  document.getElementById('editTemplateName').textContent = name;
-  const r = await fetch(`/api/templates/rules/${encodeURIComponent(name)}`);
-  editRules = await r.json();
-  renderEditRules();
-  document.getElementById('editOverlay').classList.remove('hidden');
-}
-
-function closeEditModal() {
-  document.getElementById('editOverlay').classList.add('hidden');
-  editingTemplate = null;
-}
-
-function renderEditRules() {
-  const tbody = document.getElementById('editRulesBody');
-  const empty = document.getElementById('editRulesEmpty');
-
-  if (editRules.length === 0) {
-    tbody.innerHTML = '';
-    empty.classList.remove('hidden');
-    return;
-  }
-  empty.classList.add('hidden');
-
-  tbody.innerHTML = editRules.map((rule, i) => {
-    const isHeader = HEADER_OPTIONS.includes((rule.find_what||'').toUpperCase());
-    const findSel = `
-      <select class="form-select" onchange="onFindChange(${i},this.value)" style="margin-bottom:5px">
-        <option value="">— Custom text —</option>
-        ${HEADER_OPTIONS.map(h=>`<option value="${h}" ${rule.find_what===h?'selected':''}>${h}</option>`).join('')}
-      </select>
-      ${!isHeader ? `<input type="text" class="form-input" value="${esc(rule.find_what)}" onchange="editRules[${i}].find_what=this.value" placeholder="Text to find..." />` : ''}
-    `;
-
-    let replaceWith;
-    if (rule.mode === 'dynamic') {
-      const fnLabels = {
-        'generate_uuid': 'generate_uuid()',
-        'generate_random_email': 'generate_random_email()',
-        'current_timestamp': 'current_timestamp()',
-        'build_subject': 'build_subject()  ← FROM_replacewith',
-      };
-      replaceWith = `<select class="form-select" onchange="editRules[${i}].replace_with=this.value">
-        ${DYNAMIC_FNS.map(fn=>`<option value="${fn}" ${rule.replace_with===fn?'selected':''}>${fnLabels[fn]||fn}</option>`).join('')}
-      </select>`;
-    } else if (rule.mode === 'random') {
-      replaceWith = `<select class="form-select" onchange="editRules[${i}].replace_with=this.value">
-        <option value="">— Select list —</option>
-        ${availableLists.map(l=>`<option value="${l}" ${rule.replace_with===l?'selected':''}>${l}</option>`).join('')}
-      </select>`;
-    } else {
-      replaceWith = `<input type="text" class="form-input" value="${esc(rule.replace_with)}" onchange="editRules[${i}].replace_with=this.value" placeholder="Replacement value..." />`;
+    async function init() {
+        await Promise.all([loadLists(), loadTemplates(), loadConfig()]);
     }
 
-    return `<tr>
-      <td><span class="rule-num">${String(i+1).padStart(2,'0')}</span></td>
-      <td>${findSel}</td>
-      <td>
-        <select class="form-select" onchange="onModeChange(${i},this.value)">
-          <option value="static"  ${rule.mode==='static' ?'selected':''}>Static</option>
-          <option value="dynamic" ${rule.mode==='dynamic'?'selected':''}>Dynamic</option>
-          <option value="random"  ${rule.mode==='random' ?'selected':''}>Random</option>
-        </select>
-      </td>
-      <td>${replaceWith}</td>
-      <td><button class="btn btn-xs btn-danger" onclick="removeEditRule(${i})">✕</button></td>
-    </tr>`;
-  }).join('');
-}
+    async function loadConfig() {
+        try {
+            const r = await fetch('/api/config');
+            const data = await r.json();
+            window.globalConfig = data;
+            document.getElementById('globalDownloadCount').value = data.default_count;
+            document.getElementById('configDefaultCount').value = data.default_count;
+        } catch (e) { console.error(e); }
+    }
 
-function onFindChange(i, val) {
-  editRules[i].find_what = val;
-  renderEditRules();
-}
+    async function saveConfig() {
+        const count = parseInt(document.getElementById('configDefaultCount').value);
+        try {
+            const r = await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ default_count: count })
+            });
+            if (r.ok) {
+                toast("System configuration updated", "success");
+                window.globalConfig.default_count = count;
+                document.getElementById('globalDownloadCount').value = count;
+                closeConfigModal();
+                await loadTemplates();
+            }
+        } catch (e) { toast("Pipeline configuration failed", "error"); }
+    }
 
-function onModeChange(i, val) {
-  editRules[i].mode = val;
-  editRules[i].replace_with = '';
-  renderEditRules();
-}
+    function openConfigModal() { document.getElementById('configOverlay').classList.remove('hidden'); }
+    function closeConfigModal() { document.getElementById('configOverlay').classList.add('hidden'); }
 
-function addEditRule() {
-  editRules.push({ find_what: '', mode: 'static', replace_with: '' });
-  renderEditRules();
-  // Scroll to bottom of modal body
-  const mb = document.querySelector('#editOverlay .modal-body');
-  if (mb) mb.scrollTop = mb.scrollHeight;
-}
+    function toggleSelectAll() {
+        const isChecked = document.getElementById('selectAll').checked;
+        document.querySelectorAll('.template-checkbox').forEach(cb => {
+            cb.checked = isChecked;
+        });
+        updateSelectedCount();
+    }
 
-function removeEditRule(i) {
-  editRules.splice(i, 1);
-  renderEditRules();
-}
+    function updateSelectedCount() {
+        const count = document.querySelectorAll('.template-checkbox:checked').length;
+        document.getElementById('selectedCount').textContent = count;
+    }
 
-async function saveEditRules() {
-  const r = await fetch(`/api/templates/rules/${encodeURIComponent(editingTemplate)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(editRules)
-  });
-  if (r.ok) {
-    toast(`Rules saved for "${editingTemplate}"`, 'ok');
-    closeEditModal();
-    await loadTemplates();
-  } else {
-    toast('Failed to save rules', 'err');
-  }
-}
+    async function doBulkDownload() {
+        const selected = Array.from(document.querySelectorAll('.template-checkbox:checked')).map(cb => cb.value);
+        if (selected.length === 0) return toast("Batch selection empty", "error");
+        
+        const count = document.getElementById('globalDownloadCount').value;
+        const btn = event.currentTarget;
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="animate-pulse tracking-widest uppercase text-[10px] font-black">Generating Archive...</span>';
+        btn.disabled = true;
 
-// ── PREVIEW ────────────────────────────────────────────────────────────
-async function previewTemplate() {
-  const name = editingTemplate;
-  document.getElementById('previewOverlay').classList.remove('hidden');
-  document.getElementById('previewTitle').textContent = name;
-  document.getElementById('previewContent').textContent = 'Applying rules and generating preview...';
-  const r = await fetch(`/api/templates/preview/${encodeURIComponent(name)}`);
-  const d = await r.json();
-  document.getElementById('previewContent').textContent = d.content || d.error || 'Error';
-}
+        try {
+            const res = await fetch('/api/templates/bulk-download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ templates: selected, count })
+            });
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `batch_export_${count}_files.zip`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                toast("Batch generation complete", "success");
+            } else {
+                toast("Batch export failed", "error");
+            }
+        } catch (e) { toast("Server communication error", "error"); }
+        finally {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    }
 
-// ── TOAST ──────────────────────────────────────────────────────────────
-function toast(msg, type='ok') {
-  const c = document.getElementById('toasts');
-  const el = document.createElement('div');
-  el.className = `toast toast-${type}`;
-  el.textContent = msg;
-  c.appendChild(el);
-  setTimeout(() => el.style.opacity = '0', 2500);
-  setTimeout(() => el.remove(), 2800);
-}
+    async function loadLists() {
+        try {
+            const r = await fetch('/api/lists');
+            const data = await r.json();
+            availableLists = data.map(l => l.name);
+        } catch (e) { console.error(e); }
+    }
 
-// ── Close overlays on backdrop click ──────────────────────────────────
-document.getElementById('uploadOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeUploadModal(); });
-document.getElementById('editOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditModal(); });
-document.getElementById('previewOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+    async function loadTemplates() {
+        try {
+            const r = await fetch('/api/templates');
+            templates = await r.json();
+            renderCards();
+        } catch (e) { console.error(e); }
+    }
 
-init();
+    function renderCards() {
+        const grid = document.getElementById('cardsGrid');
+        const count = document.getElementById('templateCount');
+
+        if (templates.length === 0) {
+            count.textContent = '';
+            document.getElementById('bulkActionBar').classList.add('hidden');
+            grid.innerHTML = `
+                <div class="col-span-full py-32 flex flex-col items-center text-center">
+                    <div class="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-5xl mb-8 shadow-2xl shadow-slate-200 border border-slate-100">📂</div>
+                    <h3 class="text-2xl font-bold text-slate-900 mb-3">Workspace Empty</h3>
+                    <p class="text-slate-500 max-w-sm mb-10 leading-relaxed text-sm font-medium">No templates detected in the engine. Import a raw email file to begin configuring your transformation logic.</p>
+                    <button onclick="openUploadModal()" class="bg-slate-900 hover:bg-slate-800 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-slate-200 active:scale-95">Import First Template</button>
+                </div>`;
+            return;
+        }
+
+        count.textContent = `${templates.length} ACTIVE PIPELINE${templates.length !== 1 ? 'S' : ''}`;
+        document.getElementById('bulkActionBar').classList.remove('hidden');
+
+        grid.innerHTML = templates.map(t => {
+            if (!(t.name in counters)) counters[t.name] = window.globalConfig?.default_count || 5;
+            const cnt = counters[t.name];
+            const rules = t.rules || [];
+            
+            return `
+                <div class="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden card-shadow transition-all group flex flex-col relative h-full">
+                    <div class="absolute top-6 left-6 z-10 opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-0 -translate-x-2">
+                        <label class="relative flex items-center justify-center cursor-pointer">
+                            <input type="checkbox" value="${t.name}" onchange="updateSelectedCount()" class="template-checkbox peer appearance-none w-6 h-6 rounded-lg border-2 border-slate-300 checked:bg-blue-600 checked:border-blue-600 transition-all shadow-lg bg-white">
+                            <svg class="absolute w-4 h-4 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="4">
+                                <path d="M5 13l4 4L19 7" />
+                            </svg>
+                        </label>
+                    </div>
+                    
+                    <div class="p-10 flex-1 flex flex-col items-center justify-center text-center gap-6">
+                        <div class="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center text-3xl shadow-inner border border-slate-100 group-hover:scale-110 transition-transform duration-500">
+                            📧
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-black text-slate-900 text-2xl tracking-tight leading-tight group-hover:text-blue-600 transition-colors duration-300 px-4" title="${t.name}">
+                                ${t.name}
+                            </h4>
+                            <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">MIME Pipeline</p>
+                        </div>
+                        
+                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 duration-300">
+                            <button onclick="openEditModal('${t.name}')" class="px-4 py-2 flex items-center gap-2 text-blue-600 hover:bg-blue-50 bg-white border border-blue-100 rounded-xl shadow-sm transition-all text-[10px] font-black uppercase tracking-widest">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                                </svg>
+                                Configure Logic
+                            </button>
+                            <button onclick="deleteTemplate('${t.name}')" class="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50 bg-white border border-slate-100 rounded-xl shadow-sm transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="p-8 border-t border-slate-50 bg-slate-50/30">
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-center justify-between bg-white p-2 border border-slate-200 rounded-2xl shadow-sm">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest pl-3">Units</span>
+                                <div class="flex items-center gap-1">
+                                    <button onclick="changeCounter('${t.name}', -1)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors text-slate-500 font-black">－</button>
+                                    <div class="w-10 h-8 flex items-center justify-center font-black text-xs text-slate-900 mono" id="count-${t.name}">${cnt}</div>
+                                    <button onclick="changeCounter('${t.name}', 1)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors text-slate-500 font-black">＋</button>
+                                </div>
+                            </div>
+                            <button onclick="doDownload('${t.name}')" id="dl-${t.name}" 
+                                class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-slate-200 transition-all flex items-center justify-center gap-3 active:scale-[0.98]">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Export ${cnt === 1 ? 'Single .TXT' : `Batch .ZIP (${cnt})`}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+        }).join('');
+    }
+
+    function changeCounter(name, delta) {
+        counters[name] = Math.max(1, Math.min(500, (counters[name] || 5) + delta));
+        document.getElementById(`count-${name}`).textContent = counters[name];
+        const btnText = document.querySelector(`#dl-${name} span`);
+        btnText.textContent = `Export ${counters[name] === 1 ? 'Single .TXT' : `Batch .ZIP (${counters[name]})`}`;
+    }
+
+    function openUploadModal() { document.getElementById('uploadOverlay').classList.remove('hidden'); }
+    function closeUploadModal() { document.getElementById('uploadOverlay').classList.add('hidden'); }
+
+    async function doUpload() {
+        const nameInput = document.getElementById('uploadName');
+        const fileInput = document.getElementById('uploadFile');
+        const name = nameInput.value.trim();
+        const file = fileInput.files[0];
+        if (!name || !file) return toast("Internal label and source file required", "error");
+
+        const btn = event.currentTarget;
+        const originalText = btn.textContent;
+        btn.textContent = "Processing...";
+        btn.disabled = true;
+
+        const fd = new FormData();
+        fd.append('name', name);
+        fd.append('file', file);
+
+        try {
+            const r = await fetch('/api/templates', { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.success) {
+                toast(`Pipeline "${name}" initialized`, "success");
+                closeUploadModal();
+                nameInput.value = '';
+                fileInput.value = '';
+                await loadTemplates();
+            } else {
+                toast(data.error || "Import failed", "error");
+            }
+        } catch (e) { toast("Server processing error", "error"); }
+        finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    }
+
+    async function deleteTemplate(name) {
+        if (!confirm(`This will permanently delete pipeline "${name}" and all associated transformation rules. Proceed?`)) return;
+        try {
+            const r = await fetch(`/api/templates/del/${name}`, { method: 'POST' });
+            if (r.ok) {
+                toast("Pipeline terminated successfully", "success");
+                await loadTemplates();
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function openEditModal(name) {
+        editingTemplate = name;
+        document.getElementById('editTemplateName').textContent = name;
+        try {
+            const r = await fetch(`/api/templates/rules/${name}`);
+            editRules = await r.json();
+            renderEditRules();
+            document.getElementById('editOverlay').classList.remove('hidden');
+        } catch (e) { toast("Pipeline lookup failed", "error"); }
+    }
+
+    function closeEditModal() {
+        document.getElementById('editOverlay').classList.add('hidden');
+        editingTemplate = null;
+    }
+
+    function renderEditRules() {
+        const body = document.getElementById('editRulesBody');
+        const empty = document.getElementById('editRulesEmpty');
+        
+        if (editRules.length === 0) {
+            body.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+
+        body.innerHTML = editRules.map((r, i) => `
+            <tr class="group hover:bg-blue-50/30 transition-colors">
+                <td class="py-5 px-6 text-center text-slate-300 font-black text-[10px] tracking-widest">${(i + 1).toString().padStart(2, '0')}</td>
+                <td class="py-5 px-6">
+                    <input type="text" value="${r.find_what || ''}" onchange="updateRule(${i}, 'find_pattern', this.value)" 
+                        placeholder="Target string or header..." list="headerOptions"
+                        class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none mono text-xs font-bold transition-all">
+                </td>
+                <td class="py-5 px-6">
+                    <select onchange="updateRule(${i}, 'mode', this.value)" 
+                        class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none font-black text-[9px] uppercase tracking-widest transition-all">
+                        <option value="static" ${r.mode==='static'?'selected':''}>Static Value</option>
+                        <option value="dynamic" ${r.mode==='dynamic'?'selected':''}>Dynamic Fn</option>
+                        <option value="random" ${r.mode==='random'?'selected':''}>Random Item</option>
+                    </select>
+                </td>
+                <td class="py-5 px-6">
+                    <input type="text" value="${r.replace_with || ''}" onchange="updateRule(${i}, 'replace_with', this.value)" 
+                        placeholder="${r.mode==='dynamic'?'Select function...':r.mode==='random'?'Select dictionary...':'Replacement value...'}"
+                        list="${r.mode==='dynamic'?'dynamicFns':(r.mode==='random'?'listOptions':'')}"
+                        class="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none mono text-xs font-bold transition-all">
+                </td>
+                <td class="py-5 px-6 text-center">
+                    <button onclick="removeEditRule(${i})" class="w-10 h-10 flex items-center justify-center text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </td>
+            </tr>
+        `).join('') + `
+            <datalist id="headerOptions">${HEADER_OPTIONS.map(h => `<option value="${h}">`).join('')}</datalist>
+            <datalist id="dynamicFns">${DYNAMIC_FNS.map(f => `<option value="${f}">`).join('')}</datalist>
+            <datalist id="listOptions">${availableLists.map(l => `<option value="${l}">`).join('')}</datalist>
+        `;
+    }
+
+    function addEditRule() {
+        editRules.push({ find_what: '', mode: 'static', replace_with: '' });
+        renderEditRules();
+    }
+
+    function updateRule(i, field, val) {
+        if (field === 'find_pattern') field = 'find_what';
+        editRules[i][field] = val;
+        if (field === 'mode') renderEditRules();
+    }
+
+    function removeEditRule(i) {
+        editRules.splice(i, 1);
+        renderEditRules();
+    }
+
+    async function saveEditRules() {
+        const btn = event.currentTarget;
+        const original = btn.innerHTML;
+        btn.innerHTML = '<span class="animate-pulse">Committing...</span>';
+        btn.disabled = true;
+
+        try {
+            const r = await fetch(`/api/templates/rules/${editingTemplate}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(editRules)
+            });
+            if (r.ok) {
+                toast("Transformation pipeline updated", "success");
+                closeEditModal();
+                await loadTemplates();
+            }
+        } catch (e) { toast("Commit failed", "error"); }
+        finally {
+            btn.innerHTML = original;
+            btn.disabled = false;
+        }
+    }
+
+    async function previewTemplate() {
+        const pre = document.getElementById('previewContent');
+        pre.innerHTML = '<div class="h-full flex flex-col items-center justify-center gap-6"><div class="w-12 h-12 border-4 border-slate-800 border-t-blue-500 rounded-full animate-spin"></div><span class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Executing Engine...</span></div>';
+        document.getElementById('previewTitle').textContent = `Pipeline: ${editingTemplate}`;
+        document.getElementById('previewOverlay').classList.remove('hidden');
+        
+        try {
+            const r = await fetch(`/api/templates/preview/${editingTemplate}`);
+            const data = await r.json();
+            pre.textContent = data.content || data.error || "Transformation produced no output.";
+        } catch (e) { pre.textContent = "Engine Fault: " + e.message; }
+    }
+
+    async function doDownload(name) {
+        const cnt = counters[name] || 1;
+        const btn = document.getElementById(`dl-${name}`);
+        const originalHtml = btn.innerHTML;
+        
+        btn.innerHTML = '<span class="animate-pulse tracking-widest uppercase text-[9px] font-black">Generating...</span>';
+        btn.disabled = true;
+        
+        try {
+            window.location.href = `/api/templates/download/${name}?count=${cnt}`;
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                toast("Export completed", "success");
+            }, 2500);
+        } catch (e) { 
+            toast("Export failed", "error");
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    }
+
+    function toast(msg, type = "success") {
+        const c = document.getElementById('toasts');
+        const el = document.createElement('div');
+        el.className = `p-5 rounded-2xl border shadow-2xl transform transition-all pointer-events-auto flex items-center gap-4 bg-white ${
+            type === 'success' ? 'border-emerald-100 text-emerald-800' : 'border-red-100 text-red-800'
+        }`;
+        el.style.transform = "translateX(20px)";
+        el.style.opacity = "0";
+        
+        el.innerHTML = `
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center ${type==='success'?'bg-emerald-50':'bg-red-50'}">
+                <div class="w-2 h-2 rounded-full ${type==='success'?'bg-emerald-500':'bg-red-500'}"></div>
+            </div>
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.15em] opacity-50 mb-0.5">${type==='success'?'Operation Success':'System Alert'}</p>
+                <p class="text-xs font-bold leading-none">${msg}</p>
+            </div>
+        `;
+        c.appendChild(el);
+        
+        requestAnimationFrame(() => {
+            el.style.transform = "translateX(0)";
+            el.style.opacity = "1";
+        });
+
+        setTimeout(() => {
+            el.style.transform = "translateX(20px)";
+            el.style.opacity = "0";
+            setTimeout(() => el.remove(), 400);
+        }, 4000);
+    }
+
+    init();
 </script>
 </body>
 </html>

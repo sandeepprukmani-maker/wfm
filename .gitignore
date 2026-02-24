@@ -1,2 +1,14 @@
 node_modules/
 .env
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+samples/
+replacement_data/
+lists/

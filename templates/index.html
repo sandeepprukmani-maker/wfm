@@ -5,62 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EML Transformation Engine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #08080f;
-  --surface: #0f0f1a;
-  --surface2: #14141f;
-  --border: #1e1e30;
-  --border-hi: #32324e;
-  --accent: #6366f1;
-  --accent-glow: rgba(99,102,241,0.15);
-  --green: #10d9a0;
-  --green-glow: rgba(16,217,160,0.12);
-  --red: #f04f7a;
-  --yellow: #f5a623;
-  --text: #dde1f0;
-  --muted: #5a5a7a;
-  --mono: 'Space Mono', monospace;
-  --sans: 'Syne', sans-serif;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface2: #f1f5f9;
+  --border: #e2e8f0;
+  --border-hi: #cbd5e1;
+  --accent: #2563eb;
+  --accent-glow: rgba(37,99,235,0.05);
+  --green: #059669;
+  --green-glow: rgba(5,150,105,0.05);
+  --red: #dc2626;
+  --yellow: #d97706;
+  --text: #1e293b;
+  --muted: #64748b;
+  --sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
 }
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; line-height: 1.5; }
 
-body::before {
-  content: '';
-  position: fixed; inset: 0; z-index: 0;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(99,102,241,0.06) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(16,217,160,0.04) 0%, transparent 60%),
-    linear-gradient(var(--border) 1px, transparent 1px),
-    linear-gradient(90deg, var(--border) 1px, transparent 1px);
-  background-size: auto, auto, 48px 48px, 48px 48px;
-  pointer-events: none;
-}
+body::before { display: none; }
 
 /* ── TOPBAR ────────────────────────────────────────────────────────── */
 .topbar {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(8,8,15,0.85);
-  backdrop-filter: blur(16px);
+  background: #ffffff;
   border-bottom: 1px solid var(--border);
   padding: 0 32px;
   display: flex; align-items: center; justify-content: space-between;
-  height: 60px;
+  height: 64px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
-.logo { display: flex; align-items: center; gap: 10px; }
+.logo { display: flex; align-items: center; gap: 12px; }
 .logo-icon {
   width: 32px; height: 32px; background: var(--accent);
   border-radius: 6px;
   display: grid; place-items: center;
-  font-size: 14px; color: #fff;
-  box-shadow: 0 0 20px rgba(99,102,241,0.4);
+  font-size: 16px; color: #fff;
 }
-.logo-text { font-family: var(--sans); font-weight: 800; font-size: 15px; letter-spacing: 0.05em; }
+.logo-text { font-family: var(--sans); font-weight: 700; font-size: 18px; color: var(--text); }
 .logo-text span { color: var(--accent); }
-.logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+.logo-sub { display: none; }
 
 .topbar-nav { display: flex; gap: 4px; }
 .nav-link {

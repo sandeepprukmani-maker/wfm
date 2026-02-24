@@ -94,17 +94,19 @@ def apply_rule(msg, rule, all_rules=None):
     if fu in HEADERS:
         if fu in ("TO","CC","BCC"):
             hk = fu.capitalize()
-            existing = msg.get(hk,"")
-            recs = [r.strip() for r in re.split(r",\s*", existing) if r.strip()] if existing else []
-            n = max(len(recs),1)
-            vals = get_replacement_value(rule, n, all_rules=all_rules)
-            if isinstance(vals, str): vals = [vals]*n
-            del msg[hk]; msg[hk] = ", ".join(vals[:n])
+            if hk in msg:
+                existing = msg.get(hk,"")
+                recs = [r.strip() for r in re.split(r",\s*", existing) if r.strip()] if existing else []
+                n = max(len(recs),1)
+                vals = get_replacement_value(rule, n, all_rules=all_rules)
+                if isinstance(vals, str): vals = [vals]*n
+                msg.replace_header(hk, ", ".join(vals[:n]))
         else:
             hk = "From" if fu=="FROM" else fu.capitalize()
-            v = get_replacement_value(rule, all_rules=all_rules)
-            if isinstance(v,list): v=v[0]
-            del msg[hk]; msg[hk] = v
+            if hk in msg:
+                v = get_replacement_value(rule, all_rules=all_rules)
+                if isinstance(v,list): v=v[0]
+                msg.replace_header(hk, v)
     else:
         for part in msg.walk():
             if part.get_content_maintype() in ("multipart","application"): continue
@@ -232,4 +234,4 @@ def delete_list(name):
     return jsonify({"success":True})
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(host="0.0.0.0", debug=True, port=5000)

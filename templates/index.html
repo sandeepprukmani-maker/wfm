@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EML Transformation Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #08080f;
+  --surface: #0f0f1a;
+  --surface2: #14141f;
+  --border: #1e1e30;
+  --border-hi: #32324e;
+  --accent: #6366f1;
+  --accent-glow: rgba(99,102,241,0.15);
+  --green: #10d9a0;
+  --green-glow: rgba(16,217,160,0.12);
+  --red: #f04f7a;
+  --yellow: #f5a623;
+  --text: #dde1f0;
+  --muted: #5a5a7a;
+  --mono: 'Space Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; }
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(99,102,241,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 90%, rgba(16,217,160,0.04) 0%, transparent 60%),
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: auto, auto, 48px 48px, 48px 48px;
+  pointer-events: none;
+}
+
+/* ── TOPBAR ────────────────────────────────────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(8,8,15,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px;
+}
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon {
+  width: 32px; height: 32px; background: var(--accent);
+  border-radius: 6px;
+  display: grid; place-items: center;
+  font-size: 14px; color: #fff;
+  box-shadow: 0 0 20px rgba(99,102,241,0.4);
+}
+.logo-text { font-family: var(--sans); font-weight: 800; font-size: 15px; letter-spacing: 0.05em; }
+.logo-text span { color: var(--accent); }
+.logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+
+.topbar-nav { display: flex; gap: 4px; }
+.nav-link {
+  padding: 7px 14px; font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
+  border-radius: 4px; transition: all 0.15s;
+  border: 1px solid transparent;
+}
+.nav-link:hover, .nav-link.active {
+  color: var(--text); background: var(--surface2); border-color: var(--border-hi);
+}
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.pulse-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(0.7); } }
+
+/* ── BUTTONS ───────────────────────────────────────────────────────── */
+.btn {
+  padding: 8px 16px; font-family: var(--mono); font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--border-hi); background: transparent;
+  color: var(--text); cursor: pointer; border-radius: 4px;
+  transition: all 0.15s; white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: #7577f5; border-color: #7577f5; color: #fff; }
+.btn-green { background: var(--green-glow); border-color: var(--green); color: var(--green); }
+.btn-green:hover { background: rgba(16,217,160,0.2); }
+.btn-danger { border-color: var(--red); color: var(--red); }
+.btn-danger:hover { background: rgba(240,79,122,0.1); }
+.btn-sm { padding: 5px 10px; font-size: 9px; }
+.btn-xs { padding: 3px 8px; font-size: 9px; border-radius: 3px; }
+.btn-icon {
+  width: 28px; height: 28px; padding: 0; display: grid; place-items: center;
+  font-size: 14px; border-radius: 4px;
+}
+
+/* ── MAIN CONTENT ──────────────────────────────────────────────────── */
+.page { position: relative; z-index: 1; padding: 32px; max-width: 1400px; margin: 0 auto; }
+
+.page-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+.page-title { font-family: var(--sans); font-size: 28px; font-weight: 800; }
+.page-title span { color: var(--green); }
+.page-subtitle { font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.1em; }
+
+/* ── CARDS GRID ────────────────────────────────────────────────────── */
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+  border-color: var(--border-hi);
+  box-shadow: 0 0 30px rgba(99,102,241,0.07);
+}
+
+.card-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+}
+.card-title-block { flex: 1; min-width: 0; }
+.card-name {
+  font-family: var(--sans); font-size: 15px; font-weight: 700;
+  color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-meta { margin-top: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 3px; font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+.badge-accent { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(99,102,241,0.3); }
+.badge-green  { background: var(--green-glow);  color: var(--green);  border: 1px solid rgba(16,217,160,0.3); }
+.badge-yellow { background: rgba(245,166,35,0.1); color: var(--yellow); border: 1px solid rgba(245,166,35,0.3); }
+.badge-muted  { background: rgba(90,90,122,0.1); color: var(--muted); border: 1px solid var(--border-hi); }
+
+.card-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── RULES PREVIEW ─────────────────────────────────────────────────── */
+.rules-preview { flex: 1; padding: 12px 18px; min-height: 80px; }
+.rules-empty { color: var(--muted); font-size: 10px; text-align: center; padding: 20px 0; }
+.rule-row-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(30,30,48,0.8);
+  font-size: 11px;
+}
+.rule-row-label:last-child { border-bottom: none; }
+.rule-label-text {
+  font-family: var(--mono);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rule-label-text .underscore-sep { color: var(--accent); }
+.rule-mode-pill {
+  font-size: 8px; padding: 1px 5px; border-radius: 2px; margin-left: 4px;
+  background: rgba(99,102,241,0.15); color: var(--accent);
+  vertical-align: middle;
+}
+.rule-mode-dynamic { background: rgba(16,217,160,0.12); color: var(--green); }
+.rule-mode-random  { background: rgba(240,79,122,0.12); color: var(--red); }
+
+.more-rules { font-size: 9px; color: var(--muted); padding: 6px 0 2px; text-align: center; }
+
+/* ── CARD FOOTER ───────────────────────────────────────────────────── */
+.card-footer {
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: rgba(255,255,255,0.01);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.counter-block { display: flex; align-items: center; gap: 0; }
+.counter-label { font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-right: 8px; }
+.counter-btn {
+  width: 28px; height: 28px; border: 1px solid var(--border-hi);
+  background: var(--surface2); color: var(--text); cursor: pointer;
+  font-size: 14px; font-family: var(--mono);
+  display: grid; place-items: center;
+  transition: all 0.12s;
+}
+.counter-btn:first-of-type { border-radius: 4px 0 0 4px; }
+.counter-btn:last-of-type  { border-radius: 0 4px 4px 0; }
+.counter-btn:hover { background: var(--border-hi); color: var(--accent); }
+.counter-val {
+  min-width: 40px; height: 28px;
+  border-top: 1px solid var(--border-hi);
+  border-bottom: 1px solid var(--border-hi);
+  background: var(--bg);
+  font-size: 12px; font-weight: 700;
+  display: grid; place-items: center;
+  color: var(--text);
+}
+.download-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 14px;
+  background: var(--green-glow); border: 1px solid var(--green);
+  color: var(--green); cursor: pointer; border-radius: 4px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  transition: all 0.15s;
+}
+.download-btn:hover { background: rgba(16,217,160,0.22); }
+.download-btn.loading { opacity: 0.6; pointer-events: none; }
+
+/* ── EMPTY STATE ───────────────────────────────────────────────────── */
+.empty-page {
+  text-align: center; padding: 80px 20px;
+  grid-column: 1/-1;
+}
+.empty-page .big-icon { font-size: 56px; opacity: 0.15; margin-bottom: 20px; }
+.empty-page h2 { font-family: var(--sans); font-size: 22px; font-weight: 700; color: var(--text); opacity: 0.4; margin-bottom: 10px; }
+.empty-page p { font-size: 11px; color: var(--muted); max-width: 340px; margin: 0 auto 24px; line-height: 1.8; }
+
+/* ── MODALS ────────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px;
+  width: 100%; max-width: 740px;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  animation: slideUp 0.2s ease;
+}
+.modal-sm { max-width: 460px; }
+@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.modal-title { font-family: var(--sans); font-size: 16px; font-weight: 700; }
+.modal-title span { color: var(--accent); }
+.modal-body { flex: 1; overflow-y: auto; padding: 22px; }
+.modal-footer {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+  flex-shrink: 0;
+}
+.close-btn {
+  width: 30px; height: 30px; border-radius: 4px;
+  border: 1px solid var(--border-hi); background: transparent;
+  color: var(--muted); cursor: pointer; font-size: 14px;
+  display: grid; place-items: center; transition: all 0.12s;
+}
+.close-btn:hover { color: var(--text); border-color: var(--text); }
+
+/* ── FORM ELEMENTS ─────────────────────────────────────────────────── */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.form-input, .form-select, .form-textarea {
+  background: var(--bg); border: 1px solid var(--border-hi);
+  color: var(--text); padding: 9px 12px;
+  font-family: var(--mono); font-size: 11px;
+  border-radius: 4px; outline: none; width: 100%;
+  transition: border-color 0.15s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-select option { background: var(--surface); }
+.form-textarea { min-height: 80px; resize: vertical; }
+input[type="file"] {
+  background: var(--bg); border: 1px solid var(--border-hi);
+  color: var(--text); padding: 8px 12px;
+  font-family: var(--mono); font-size: 11px;
+  border-radius: 4px; cursor: pointer; width: 100%;
+}
+.form-note { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+/* ── RULES TABLE ───────────────────────────────────────────────────── */
+.rules-table { width: 100%; border-collapse: collapse; }
+.rules-table th {
+  font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); padding: 10px 10px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.rules-table td { padding: 8px 10px; border-bottom: 1px solid rgba(30,30,48,0.6); vertical-align: middle; }
+.rules-table tr:hover td { background: rgba(255,255,255,0.015); }
+.rules-table .form-input, .rules-table .form-select { font-size: 10px; padding: 6px 9px; }
+.rule-num { font-size: 10px; color: var(--muted); font-weight: 700; }
+
+/* ── PREVIEW ───────────────────────────────────────────────────────── */
+.preview-pre {
+  font-family: var(--mono); font-size: 10px; line-height: 1.9;
+  white-space: pre-wrap; word-break: break-all;
+  color: var(--green); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 16px; max-height: 500px; overflow-y: auto;
+}
+
+/* ── TOAST ─────────────────────────────────────────────────────────── */
+.toasts { position: fixed; bottom: 24px; right: 24px; z-index: 500; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  padding: 11px 16px; background: var(--surface2);
+  border: 1px solid var(--border-hi); border-radius: 4px;
+  font-size: 11px; max-width: 320px;
+  animation: toastIn 0.2s ease;
+}
+.toast-ok  { border-color: var(--green); color: var(--green); }
+.toast-err { border-color: var(--red); color: var(--red); }
+@keyframes toastIn { from { transform: translateX(16px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.hidden { display: none !important; }
+.divider { height: 1px; background: var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── TOPBAR ─────────────────────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div>
+      <div class="logo-text">EML <span>Engine</span></div>
+      <div class="logo-sub">Transformation System</div>
+    </div>
+  </div>
+  <nav class="topbar-nav">
+    <a href="/" class="nav-link active">◈ Templates</a>
+    <a href="/lists" class="nav-link">≡ Lists</a>
+  </nav>
+  <div class="topbar-right">
+    <div class="pulse-dot"></div>
+    <button class="btn btn-primary" onclick="openUploadModal()">+ Upload Template</button>
+  </div>
+</header>
+
+<!-- ── MAIN PAGE ──────────────────────────────────────────────────────── -->
+<main class="page">
+  <div class="page-header">
+    <div>
+      <div class="page-title">Email <span>Templates</span></div>
+      <div class="page-subtitle">MIME-aware · Journaled · Encoded content · Rule-driven transformation</div>
+    </div>
+    <div id="templateCount" style="font-size:11px;color:var(--muted)"></div>
+  </div>
+  <div class="cards-grid" id="cardsGrid">
+    <div class="empty-page">
+      <div class="big-icon">📧</div>
+      <h2>No Templates Yet</h2>
+      <p>Upload a raw .eml file to get started. Each template stores its own transformation rules.</p>
+      <button class="btn btn-primary" onclick="openUploadModal()">+ Upload First Template</button>
+    </div>
+  </div>
+</main>
+
+<!-- ── UPLOAD MODAL ───────────────────────────────────────────────────── -->
+<div class="overlay hidden" id="uploadOverlay">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">Upload <span>Template</span></div>
+      <button class="close-btn" onclick="closeUploadModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="form-group">
+          <label class="form-label">Template Name</label>
+          <input type="text" class="form-input" id="uploadName" placeholder="e.g. invoice_template" />
+          <div class="form-note">Alphanumeric, dashes, underscores only</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">EML / TXT File</label>
+          <input type="file" id="uploadFile" accept=".txt,.eml" />
+          <div class="form-note">Raw email content as plain text</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeUploadModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="doUpload()">Upload Template</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDIT RULES MODAL ───────────────────────────────────────────────── -->
+<div class="overlay hidden" id="editOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Rules — <span id="editTemplateName"></span></div>
+      <button class="close-btn" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Mode reference -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px">
+          <span class="badge badge-accent">Static</span>
+          <p style="font-size:9px;color:var(--muted);margin-top:7px;line-height:1.7">Fixed replacement text. Exact value used every time.</p>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px">
+          <span class="badge badge-green">Dynamic</span>
+          <p style="font-size:9px;color:var(--muted);margin-top:7px;line-height:1.8">
+            <code style="color:var(--green)">generate_uuid()</code><br>
+            <code style="color:var(--green)">generate_random_email()</code><br>
+            <code style="color:var(--green)">current_timestamp()</code><br>
+            <code style="color:var(--accent)">build_subject()</code>
+            <span style="color:var(--muted);font-size:8px;display:block;margin-top:3px">Builds subject as FROM_replacewith using other rule names</span>
+          </p>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:10px">
+          <span class="badge badge-yellow">Random</span>
+          <p style="font-size:9px;color:var(--muted);margin-top:7px;line-height:1.7">Picks randomly from a named list. Manage lists in <a href="/lists" style="color:var(--accent)">Lists page</a>.</p>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <table class="rules-table" id="editRulesTable">
+        <thead>
+          <tr>
+            <th style="width:36px">#</th>
+            <th>Find What</th>
+            <th style="width:130px">Mode</th>
+            <th>Replace With</th>
+            <th style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody id="editRulesBody"></tbody>
+      </table>
+      <div id="editRulesEmpty" class="rules-empty hidden">No rules yet — add one below</div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn btn-green btn-sm" onclick="addEditRule()">+ Add Rule</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="previewTemplate()">⬡ Preview</button>
+        <button class="btn btn-primary btn-sm" onclick="saveEditRules()">✓ Save Rules</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PREVIEW MODAL ──────────────────────────────────────────────────── -->
+<div class="overlay hidden" id="previewOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Preview — <span style="color:var(--green)" id="previewTitle"></span></div>
+      <button class="close-btn" onclick="document.getElementById('previewOverlay').classList.add('hidden')">✕</button>
+    </div>
+    <div class="modal-body">
+      <pre class="preview-pre" id="previewContent">Loading...</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOASTS ─────────────────────────────────────────────────────────── -->
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────
+let templates = [];
+let availableLists = [];
+let editingTemplate = null;
+let editRules = [];
+const counters = {}; // { templateName: count }
+
+const HEADER_OPTIONS = ['FROM','TO','CC','BCC','SUBJECT'];
+const DYNAMIC_FNS = ['generate_uuid','generate_random_email','current_timestamp','build_subject'];
+
+// ── INIT ───────────────────────────────────────────────────────────────
+async function init() {
+  await Promise.all([loadLists(), loadTemplates()]);
+}
+
+async function loadLists() {
+  const r = await fetch('/api/lists');
+  availableLists = (await r.json()).map(l => l.name);
+}
+
+async function loadTemplates() {
+  const r = await fetch('/api/templates');
+  templates = await r.json();
+  renderCards();
+}
+
+// ── RENDER CARDS ───────────────────────────────────────────────────────
+function renderCards() {
+  const grid = document.getElementById('cardsGrid');
+  const count = document.getElementById('templateCount');
+
+  if (templates.length === 0) {
+    count.textContent = '';
+    grid.innerHTML = `<div class="empty-page">
+      <div class="big-icon">📧</div>
+      <h2>No Templates Yet</h2>
+      <p>Upload a raw .eml file to get started. Each template stores its own transformation rules.</p>
+      <button class="btn btn-primary" onclick="openUploadModal()">+ Upload First Template</button>
+    </div>`;
+    return;
+  }
+
+  count.textContent = `${templates.length} template${templates.length !== 1 ? 's' : ''}`;
+
+  grid.innerHTML = templates.map(t => {
+    if (!(t.name in counters)) counters[t.name] = 5;
+    const cnt = counters[t.name];
+    const rules = t.rules || [];
+    const preview = rules.slice(0, 4);
+    const extra = rules.length - preview.length;
+    return `
+    <div class="card" id="card-${esc(t.name)}">
+      <div class="card-header">
+        <div class="card-title-block">
+          <div class="card-name" title="${esc(t.name)}">${esc(t.name)}</div>
+          <div class="card-meta">
+            <span class="badge badge-accent">${rules.length} rule${rules.length !== 1 ? 's' : ''}</span>
+            ${rules.some(r=>r.mode==='dynamic') ? '<span class="badge badge-green">dynamic</span>' : ''}
+            ${rules.some(r=>r.mode==='random')  ? '<span class="badge badge-yellow">random</span>'  : ''}
+          </div>
+        </div>
+        <div class="card-header-actions">
+          <button class="btn btn-sm" onclick="openEditModal('${esc(t.name)}')" title="Edit rules">✎ Edit</button>
+          <button class="btn btn-sm" onclick="quickAddRule('${esc(t.name)}')" title="Add a rule">＋ Rule</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${esc(t.name)}')" title="Delete template">✕</button>
+        </div>
+      </div>
+
+      <div class="rules-preview">
+        ${rules.length === 0
+          ? '<div class="rules-empty">No rules configured — click Edit or + Rule to add</div>'
+          : preview.map(r => {
+              const find = (r.find_what || '').toUpperCase();
+              const rw   = r.replace_with || '';
+              const label = rw
+                ? `${find}<span style="color:var(--accent)">_</span>${rw}`
+                : find || '—';
+              const modeClass = r.mode === 'dynamic' ? 'rule-mode-dynamic' : r.mode === 'random' ? 'rule-mode-random' : '';
+              return `<div class="rule-row-label">
+                <span class="rule-mode-pill ${modeClass}">${r.mode}</span>
+                <span class="rule-label-text">${label}</span>
+              </div>`;
+            }).join('')
+          + (extra > 0 ? `<div class="more-rules">+ ${extra} more rule${extra !== 1 ? 's' : ''}</div>` : '')
+        }
+      </div>
+
+      <div class="card-footer">
+        <div class="counter-block">
+          <span class="counter-label">Samples</span>
+          <button class="counter-btn" onclick="adjustCount('${esc(t.name)}', -1)">−</button>
+          <div class="counter-val" id="counter-${esc(t.name)}">${cnt}</div>
+          <button class="counter-btn" onclick="adjustCount('${esc(t.name)}', 1)">+</button>
+        </div>
+        <button class="download-btn" id="dl-${esc(t.name)}" onclick="downloadTemplate('${esc(t.name)}')">
+          <span>↓</span> Download ${cnt === 1 ? '.txt' : `.zip (${cnt})`}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/'/g,'&#39;'); }
+
+// ── COUNTER ────────────────────────────────────────────────────────────
+function adjustCount(name, delta) {
+  counters[name] = Math.max(1, Math.min(500, (counters[name] || 5) + delta));
+  const el = document.getElementById(`counter-${name}`);
+  const dl = document.getElementById(`dl-${name}`);
+  if (el) el.textContent = counters[name];
+  if (dl) dl.innerHTML = `<span>↓</span> Download ${counters[name] === 1 ? '.txt' : `.zip (${counters[name]})`}`;
+}
+
+// ── DOWNLOAD ───────────────────────────────────────────────────────────
+function downloadTemplate(name) {
+  const count = counters[name] || 5;
+  const btn = document.getElementById(`dl-${name}`);
+  btn.classList.add('loading');
+  btn.innerHTML = `<span>⟳</span> Generating...`;
+  const a = document.createElement('a');
+  a.href = `/api/templates/download/${encodeURIComponent(name)}?count=${count}`;
+  a.click();
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    btn.innerHTML = `<span>↓</span> Download ${count === 1 ? '.txt' : `.zip (${count})`}`;
+    toast(`Downloaded ${count} sample${count!==1?'s':''} for "${name}"`, 'ok');
+  }, 1500);
+}
+
+// ── DELETE ─────────────────────────────────────────────────────────────
+async function deleteTemplate(name) {
+  if (!confirm(`Delete template "${name}" and all its rules?`)) return;
+  await fetch(`/api/templates/del/${encodeURIComponent(name)}`, { method: 'POST' });
+  toast(`Template "${name}" deleted`, 'ok');
+  await loadTemplates();
+}
+
+// ── UPLOAD ─────────────────────────────────────────────────────────────
+function openUploadModal()  { document.getElementById('uploadOverlay').classList.remove('hidden'); }
+function closeUploadModal() { document.getElementById('uploadOverlay').classList.add('hidden'); }
+
+async function doUpload() {
+  const name = document.getElementById('uploadName').value.trim();
+  const file = document.getElementById('uploadFile').files[0];
+  if (!name || !file) { toast('Name and file are required', 'err'); return; }
+  const fd = new FormData();
+  fd.append('name', name);
+  fd.append('file', file);
+  const r = await fetch('/api/templates', { method: 'POST', body: fd });
+  const d = await r.json();
+  if (d.success) {
+    toast(`Template "${name}" uploaded`, 'ok');
+    closeUploadModal();
+    document.getElementById('uploadName').value = '';
+    document.getElementById('uploadFile').value = '';
+    await loadTemplates();
+  } else {
+    toast(d.error || 'Upload failed', 'err');
+  }
+}
+
+// ── QUICK ADD RULE (opens edit modal then adds a rule) ─────────────────
+async function quickAddRule(name) {
+  await openEditModal(name);
+  addEditRule();
+}
+
+// ── EDIT MODAL ─────────────────────────────────────────────────────────
+async function openEditModal(name) {
+  editingTemplate = name;
+  document.getElementById('editTemplateName').textContent = name;
+  const r = await fetch(`/api/templates/rules/${encodeURIComponent(name)}`);
+  editRules = await r.json();
+  renderEditRules();
+  document.getElementById('editOverlay').classList.remove('hidden');
+}
+
+function closeEditModal() {
+  document.getElementById('editOverlay').classList.add('hidden');
+  editingTemplate = null;
+}
+
+function renderEditRules() {
+  const tbody = document.getElementById('editRulesBody');
+  const empty = document.getElementById('editRulesEmpty');
+
+  if (editRules.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  tbody.innerHTML = editRules.map((rule, i) => {
+    const isHeader = HEADER_OPTIONS.includes((rule.find_what||'').toUpperCase());
+    const findSel = `
+      <select class="form-select" onchange="onFindChange(${i},this.value)" style="margin-bottom:5px">
+        <option value="">— Custom text —</option>
+        ${HEADER_OPTIONS.map(h=>`<option value="${h}" ${rule.find_what===h?'selected':''}>${h}</option>`).join('')}
+      </select>
+      ${!isHeader ? `<input type="text" class="form-input" value="${esc(rule.find_what)}" onchange="editRules[${i}].find_what=this.value" placeholder="Text to find..." />` : ''}
+    `;
+
+    let replaceWith;
+    if (rule.mode === 'dynamic') {
+      const fnLabels = {
+        'generate_uuid': 'generate_uuid()',
+        'generate_random_email': 'generate_random_email()',
+        'current_timestamp': 'current_timestamp()',
+        'build_subject': 'build_subject()  ← FROM_replacewith',
+      };
+      replaceWith = `<select class="form-select" onchange="editRules[${i}].replace_with=this.value">
+        ${DYNAMIC_FNS.map(fn=>`<option value="${fn}" ${rule.replace_with===fn?'selected':''}>${fnLabels[fn]||fn}</option>`).join('')}
+      </select>`;
+    } else if (rule.mode === 'random') {
+      replaceWith = `<select class="form-select" onchange="editRules[${i}].replace_with=this.value">
+        <option value="">— Select list —</option>
+        ${availableLists.map(l=>`<option value="${l}" ${rule.replace_with===l?'selected':''}>${l}</option>`).join('')}
+      </select>`;
+    } else {
+      replaceWith = `<input type="text" class="form-input" value="${esc(rule.replace_with)}" onchange="editRules[${i}].replace_with=this.value" placeholder="Replacement value..." />`;
+    }
+
+    return `<tr>
+      <td><span class="rule-num">${String(i+1).padStart(2,'0')}</span></td>
+      <td>${findSel}</td>
+      <td>
+        <select class="form-select" onchange="onModeChange(${i},this.value)">
+          <option value="static"  ${rule.mode==='static' ?'selected':''}>Static</option>
+          <option value="dynamic" ${rule.mode==='dynamic'?'selected':''}>Dynamic</option>
+          <option value="random"  ${rule.mode==='random' ?'selected':''}>Random</option>
+        </select>
+      </td>
+      <td>${replaceWith}</td>
+      <td><button class="btn btn-xs btn-danger" onclick="removeEditRule(${i})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function onFindChange(i, val) {
+  editRules[i].find_what = val;
+  renderEditRules();
+}
+
+function onModeChange(i, val) {
+  editRules[i].mode = val;
+  editRules[i].replace_with = '';
+  renderEditRules();
+}
+
+function addEditRule() {
+  editRules.push({ find_what: '', mode: 'static', replace_with: '' });
+  renderEditRules();
+  // Scroll to bottom of modal body
+  const mb = document.querySelector('#editOverlay .modal-body');
+  if (mb) mb.scrollTop = mb.scrollHeight;
+}
+
+function removeEditRule(i) {
+  editRules.splice(i, 1);
+  renderEditRules();
+}
+
+async function saveEditRules() {
+  const r = await fetch(`/api/templates/rules/${encodeURIComponent(editingTemplate)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(editRules)
+  });
+  if (r.ok) {
+    toast(`Rules saved for "${editingTemplate}"`, 'ok');
+    closeEditModal();
+    await loadTemplates();
+  } else {
+    toast('Failed to save rules', 'err');
+  }
+}
+
+// ── PREVIEW ────────────────────────────────────────────────────────────
+async function previewTemplate() {
+  const name = editingTemplate;
+  document.getElementById('previewOverlay').classList.remove('hidden');
+  document.getElementById('previewTitle').textContent = name;
+  document.getElementById('previewContent').textContent = 'Applying rules and generating preview...';
+  const r = await fetch(`/api/templates/preview/${encodeURIComponent(name)}`);
+  const d = await r.json();
+  document.getElementById('previewContent').textContent = d.content || d.error || 'Error';
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const c = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.style.opacity = '0', 2500);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ── Close overlays on backdrop click ──────────────────────────────────
+document.getElementById('uploadOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeUploadModal(); });
+document.getElementById('editOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeEditModal(); });
+document.getElementById('previewOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
+init();
+</script>
+</body>
+</html>

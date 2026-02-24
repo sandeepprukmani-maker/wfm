@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lists Manager — EML Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --border: #222232; --border-bright: #3a3a5c;
+    --accent: #5b5bff; --accent2: #00e5a0; --accent3: #ff5b8a;
+    --text: #e2e2f0; --muted: #666688;
+    --mono: 'Space Mono', monospace; --sans: 'Syne', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--mono); min-height: 100vh; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px; opacity: 0.4; pointer-events: none; z-index: 0;
+  }
+  .app { position: relative; z-index: 1; display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+  .sidebar-header { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, #0d0d1a 0%, #111118 100%); }
+  .logo { font-family: var(--sans); font-weight: 800; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .logo-sub { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+  .sidebar-nav { padding: 12px 0; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); cursor: pointer; transition: all 0.15s; text-decoration: none; }
+  .nav-item:hover, .nav-item.active { color: var(--text); background: rgba(91,91,255,0.08); border-left: 2px solid var(--accent); }
+  .nav-icon { width: 14px; text-align: center; }
+  .main { display: flex; flex-direction: column; }
+  .topbar { padding: 16px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface); }
+  .topbar-title { font-family: var(--sans); font-size: 20px; font-weight: 800; }
+  .topbar-title span { color: var(--accent3); }
+  .content { flex: 1; padding: 24px 28px; overflow-y: auto; }
+  .btn { padding: 8px 16px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid var(--border-bright); background: transparent; color: var(--text); cursor: pointer; transition: all 0.15s; border-radius: 2px; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #7070ff; color: #fff; }
+  .btn-danger { border-color: var(--accent3); color: var(--accent3); }
+  .btn-danger:hover { background: rgba(255,91,138,0.1); }
+  .btn-sm { padding: 5px 10px; font-size: 9px; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
+  .panel-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); }
+  .panel-title { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent3); }
+  .panel-body { padding: 20px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  label { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  input[type="text"], textarea { background: var(--bg); border: 1px solid var(--border-bright); color: var(--text); padding: 8px 12px; font-family: var(--mono); font-size: 11px; border-radius: 2px; outline: none; width: 100%; }
+  input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
+  textarea { min-height: 120px; resize: vertical; }
+  .lists-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .list-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  .list-card-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); }
+  .list-name { font-size: 12px; color: var(--accent2); }
+  .list-count { font-size: 9px; color: var(--muted); padding: 2px 8px; border: 1px solid var(--border-bright); border-radius: 2px; }
+  .list-items { padding: 12px 16px; max-height: 200px; overflow-y: auto; }
+  .list-item { font-size: 10px; padding: 4px 0; border-bottom: 1px solid rgba(34,34,50,0.3); color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+  .list-item:last-child { border: none; }
+  .list-actions { padding: 10px 16px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+  .toast { padding: 12px 18px; background: var(--surface); border: 1px solid var(--border-bright); border-radius: 2px; font-size: 11px; animation: slideIn 0.2s ease; max-width: 300px; }
+  .toast.success { border-color: var(--accent2); color: var(--accent2); }
+  .toast.error { border-color: var(--accent3); color: var(--accent3); }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 100; backdrop-filter: blur(4px); }
+  .modal { background: var(--surface); border: 1px solid var(--border-bright); border-radius: 4px; width: 90%; max-width: 500px; }
+  .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .modal-body { padding: 20px; }
+  .hidden { display: none !important; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-family: var(--sans); font-size: 16px; margin-bottom: 8px; color: var(--text); opacity: 0.5; }
+  .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">⚡ EML Engine</div>
+      <div class="logo-sub">Transformation System v1.0</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="/"><span class="nav-icon">◈</span> Templates</a>
+      <a class="nav-item active" href="/lists"><span class="nav-icon">≡</span> Lists Manager</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Lists <span>Manager</span></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">
+          <span class="status-dot"></span>Named value pools for Random replacement mode
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="showCreateModal()">+ New List</button>
+    </div>
+
+    <div class="content">
+      <div id="listsGrid" class="lists-grid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="icon">≡</div>
+          <h3>No Lists Yet</h3>
+          <p>Create named lists to use with the Random replacement mode in your templates.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal-overlay hidden" id="createModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div style="font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent3)" id="modalTitle">Create New List</div>
+      <button class="btn btn-sm" onclick="hideModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>List Name</label>
+        <input type="text" id="listName" placeholder="e.g. email_addresses" />
+        <div style="font-size:9px;color:var(--muted);margin-top:4px">Alphanumeric, dashes, underscores</div>
+      </div>
+      <div class="form-group">
+        <label>Values (one per line)</label>
+        <textarea id="listItems" placeholder="john@example.com&#10;jane@test.org&#10;user@demo.net"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-primary" onclick="saveList()" style="flex:1;padding:12px" id="saveBtn">Create List</button>
+        <button class="btn" onclick="hideModal()" style="flex:0">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+let lists = [];
+let editingList = null;
+
+async function loadLists() {
+  const res = await fetch('/api/lists');
+  lists = await res.json();
+  renderLists();
+}
+
+function renderLists() {
+  const grid = document.getElementById('listsGrid');
+  if (lists.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">≡</div>
+      <h3>No Lists Yet</h3>
+      <p>Create named lists to use with the Random replacement mode in your templates.</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = lists.map(l => `
+    <div class="list-card">
+      <div class="list-card-header">
+        <div class="list-name">${l.name}</div>
+        <span class="list-count">${l.count} item${l.count !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="list-items">
+        ${l.items.length === 0
+          ? '<div style="font-size:10px;color:var(--muted);text-align:center;padding:12px">Empty list</div>'
+          : l.items.slice(0, 8).map(item => `<div class="list-item"><span>${escHtml(item)}</span></div>`).join('')
+            + (l.items.length > 8 ? `<div style="font-size:9px;color:var(--muted);padding:4px 0">+ ${l.items.length - 8} more...</div>` : '')}
+      </div>
+      <div class="list-actions">
+        <button class="btn btn-sm" onclick="editList('${l.name}')" style="flex:1">✎ Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteList('${l.name}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+function showCreateModal() {
+  editingList = null;
+  document.getElementById('modalTitle').textContent = 'Create New List';
+  document.getElementById('saveBtn').textContent = 'Create List';
+  document.getElementById('listName').value = '';
+  document.getElementById('listName').disabled = false;
+  document.getElementById('listItems').value = '';
+  document.getElementById('createModal').classList.remove('hidden');
+}
+
+function editList(name) {
+  const l = lists.find(x => x.name === name);
+  if (!l) return;
+  editingList = name;
+  document.getElementById('modalTitle').textContent = `Edit: ${name}`;
+  document.getElementById('saveBtn').textContent = 'Update List';
+  document.getElementById('listName').value = name;
+  document.getElementById('listName').disabled = true;
+  document.getElementById('listItems').value = l.items.join('\n');
+  document.getElementById('createModal').classList.remove('hidden');
+}
+
+function hideModal() { document.getElementById('createModal').classList.add('hidden'); }
+
+async function saveList() {
+  const name = document.getElementById('listName').value.trim();
+  const rawItems = document.getElementById('listItems').value;
+  const items = rawItems.split('\n').map(s => s.trim()).filter(Boolean);
+
+  if (!name) { toast('List name required', 'error'); return; }
+
+  if (editingList) {
+    const res = await fetch(`/api/lists/update/${name}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items })
+    });
+    if (res.ok) { toast(`List "${name}" updated`, 'success'); hideModal(); await loadLists(); }
+    else toast('Failed to update', 'error');
+  } else {
+    const res = await fetch('/api/lists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, items })
+    });
+    const data = await res.json();
+    if (data.success) { toast(`List "${name}" created`, 'success'); hideModal(); await loadLists(); }
+    else toast(data.error || 'Failed', 'error');
+  }
+}
+
+async function deleteList(name) {
+  if (!confirm(`Delete list "${name}"?`)) return;
+  await fetch(`/api/lists/del/${name}`, { method: 'POST' });
+  toast(`List "${name}" deleted`, 'success');
+  await loadLists();
+}
+
+function toast(msg, type='success') {
+  const c = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+loadLists();
+</script>
+</body>
+</html>

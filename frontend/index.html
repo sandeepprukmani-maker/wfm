@@ -20,6 +20,7 @@
   --red:#ff4d6a;--rdim:rgba(255,77,106,.1);
   --yellow:#ffb020;--ydim:rgba(255,176,32,.1);
   --purple:#b66dff;--orange:#ff7d3d;
+  --surface2:#111827;
   --mono:'IBM Plex Mono','Cascadia Code','Fira Code','JetBrains Mono',ui-monospace,monospace;--sans:'Syne','DM Sans','Inter','Segoe UI',system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -600,6 +601,39 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
   const [showSettings,setShowSettings]=useState(false);
   const canvasRef=useRef(null);
   const wsRef=useRef(null);
+  const [connecting,setConnecting]=useState(null);
+  const [selEdge,setSelEdge]=useState(null);
+
+  const startConnect=(e,nodeId)=>{
+    e.stopPropagation();
+    const r=canvasRef.current?.getBoundingClientRect();
+    if(!r) return;
+    const cx=e.clientX-r.left, cy=e.clientY-r.top;
+    setConnecting({from:nodeId,startX:cx,startY:cy,x:cx,y:cy});
+  };
+
+  const finishConnect=(toId)=>{
+    if(!connecting||connecting.from===toId) return;
+    pushHistory(wf);
+    setWf(w=>({...w,edges:[...(w.edges||[]),{from:connecting.from,to:toId}]}));
+    setConnecting(null);
+  };
+
+  const selectEdge=(idx,e)=>{
+    e.stopPropagation();
+    setSelEdge(idx===selEdge?null:idx);
+    setSel(null);
+  };
+
+  const deleteEdge=(idx)=>{
+    pushHistory(wf);
+    setWf(w=>({...w,edges:(w.edges||[]).filter((_,i)=>i!==idx)}));
+    setSelEdge(null);
+  };
+
+  const setEdgeBranch=(idx,branch)=>{
+    setWf(w=>({...w,edges:(w.edges||[]).map((e,i)=>i===idx?{...e,branch:branch||undefined}:e)}));
+  };
 
   useEffect(()=>{if(initialWorkflow) setWf({nodes:[],edges:[],...initialWorkflow});},[initialWorkflow]);
 
@@ -611,7 +645,7 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
   const redo=()=>{if(!future.length)return;const n=future[0];setHistory(h=>[...h,wf]);setFuture(f=>f.slice(1));setWf(n);};
 
   const onMouseDownNode=useCallback((e,nodeId)=>{
-    e.stopPropagation();setSel(nodeId);
+    e.stopPropagation();setSel(nodeId);setSelEdge(null);
     const node=dsl.nodes.find(n=>n.id===nodeId);
     setDragId(nodeId);setDragOff({x:e.clientX-node.x*zoom-pan.x,y:e.clientY-node.y*zoom-pan.y});
   },[dsl.nodes,zoom,pan]);
@@ -703,7 +737,11 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
   };
 
   const updateProp=(nodeId,key,val)=>{
-    setWf(w=>({...w,nodes:(w.nodes||[]).map(n=>n.id===nodeId?{...n,props:{...n.props,[key]:val}}:n)}));
+    if(key==='__title'){
+      setWf(w=>({...w,nodes:(w.nodes||[]).map(n=>n.id===nodeId?{...n,title:val}:n)}));
+    } else {
+      setWf(w=>({...w,nodes:(w.nodes||[]).map(n=>n.id===nodeId?{...n,props:{...n.props,[key]:val}}:n)}));
+    }
   };
 
   const exportPytest=async(mode='run')=>{
@@ -847,7 +885,7 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
           })}
           {/* In-progress connection drag line */}
           {connecting&&<line
-            x1={connecting.x} y1={connecting.y}
+            x1={connecting.startX} y1={connecting.startY}
             x2={connecting.x} y2={connecting.y}
             stroke="var(--accent)" strokeWidth={1.5} strokeDasharray="5 3"
             style={{pointerEvents:'none'}}/>
@@ -1028,7 +1066,6 @@ function NodeProps({node,onChange,api,addToast}){
             <div className="prop-lbl">{field.l}</div>
             {(node.type==='trigger'&&field.k==='cron')
               ? <CronBuilder value={node.props?.[field.k]??field.d??''} onChange={v=>onChange(node.id,field.k,v)}/>
-              : field.t==='textarea'
               : field.t==='textarea'
               ? <textarea className="ta" style={isCode&&field.k==='code'?{minHeight:120,fontFamily:'var(--mono)',fontSize:12}:{}}
                   defaultValue={node.props?.[field.k]??field.d??''} onChange={e=>onChange(node.id,field.k,e.target.value)}/>

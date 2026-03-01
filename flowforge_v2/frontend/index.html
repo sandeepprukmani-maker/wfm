@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FlowForge — Workflow Automation</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --void:#050709;--deep:#080c12;--surface:#0e1420;--raised:#131b28;--hover:#19203a;
+  --border:#1e2d42;--border-hi:#2a3f5c;
+  --t1:#e2eaf5;--t2:#7a92b0;--t3:#3d5470;
+  --accent:#00e5ff;--adim:rgba(0,229,255,.12);--aglow:rgba(0,229,255,.06);
+  --green:#00d68f;--gdim:rgba(0,214,143,.1);
+  --red:#ff4d6a;--rdim:rgba(255,77,106,.1);
+  --yellow:#ffb020;--ydim:rgba(255,176,32,.1);
+  --purple:#b66dff;--orange:#ff7d3d;
+  --mono:'IBM Plex Mono',monospace;--sans:'Syne',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--void);color:var(--t1);display:flex;flex-direction:column}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px}
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:210px;min-width:210px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;flex-shrink:0}
+.logo-wrap{padding:16px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#0055ff);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#000;font-family:var(--mono);flex-shrink:0}
+.logo-text{font-size:15px;font-weight:800;color:var(--accent)}
+.nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav-sec{font-size:9px;text-transform:uppercase;letter-spacing:1.4px;color:var(--t3);padding:10px 12px 4px;font-family:var(--mono)}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:7px;cursor:pointer;color:var(--t3);font-size:13px;font-weight:500;transition:all .15s;border:1px solid transparent}
+.nav-item:hover{background:var(--raised);color:var(--t2)}
+.nav-item.active{background:var(--adim);color:var(--accent);border-color:rgba(0,229,255,.2)}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sidebar-bot{padding:12px;border-top:1px solid var(--border)}
+.user-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--raised);border-radius:8px;cursor:pointer}
+.user-av{width:28px;height:28px;background:linear-gradient(135deg,var(--purple),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600}
+.user-role{font-size:10px;color:var(--t3);font-family:var(--mono)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:48px;background:var(--deep);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
+.topbar-title{font-size:14px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.page{flex:1;overflow:hidden;display:flex}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00cce8}
+.btn-secondary{background:var(--raised);color:var(--t1);border:1px solid var(--border-hi)}.btn-secondary:hover{background:var(--hover)}
+.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--raised);color:var(--t1)}
+.btn-danger{background:var(--rdim);color:var(--red);border:1px solid rgba(255,77,106,.25)}.btn-danger:hover{background:rgba(255,77,106,.2)}
+.btn-success{background:var(--gdim);color:var(--green);border:1px solid rgba(0,214,143,.25)}.btn-success:hover{background:rgba(0,214,143,.2)}
+.btn-sm{padding:4px 9px;font-size:11.5px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono)}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.badge-success{background:var(--gdim);color:var(--green)}
+.badge-failed{background:var(--rdim);color:var(--red)}
+.badge-running{background:var(--ydim);color:var(--yellow)}
+.badge-pending,.badge-cancelled{background:rgba(61,84,112,.2);color:var(--t3)}
+.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-family:var(--mono);background:var(--raised);color:var(--t3);border:1px solid var(--border)}
+.inp{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--t1);font-size:12.5px;font-family:var(--mono);outline:none;transition:border .15s}
+.inp:focus{border-color:var(--accent)}
+.inp::placeholder{color:var(--t3)}
+.sel{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--t1);font-size:12.5px;font-family:var(--mono);outline:none;cursor:pointer}
+.ta{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--t1);font-size:12px;font-family:var(--mono);outline:none;resize:vertical;min-height:64px;transition:border .15s}
+.ta:focus{border-color:var(--accent)}
+.prop-grp{margin-bottom:16px}
+.prop-grp-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:8px;font-family:var(--mono)}
+.prop-field{margin-bottom:9px}
+.prop-lbl{font-size:11.5px;color:var(--t2);margin-bottom:3px}
+.hint{font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono)}
+.toast-wrap{position:fixed;bottom:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--surface);border:1px solid var(--border-hi);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:9px;min-width:240px;max-width:360px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:tIn .25s ease;font-size:13px}
+.toast-success{border-color:rgba(0,214,143,.35)}
+.toast-error{border-color:rgba(255,77,106,.35)}
+.toast-info{border-color:rgba(0,229,255,.25)}
+@keyframes tIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--deep);border:1px solid var(--border-hi);border-radius:14px;width:700px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6);animation:mIn .2s ease}
+.modal-sm{width:480px}
+@keyframes mIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mtitle{font-size:15px;font-weight:700}
+.mclose{width:28px;height:28px;background:var(--raised);border:none;border-radius:5px;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;font-size:17px}
+.mclose:hover{background:var(--rdim);color:var(--red)}
+.mbody{flex:1;overflow-y:auto;padding:18px 20px}
+.mfoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
+.accent-line{height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--purple),var(--green),transparent);background-size:200% 100%;animation:gm 3s linear infinite;position:fixed;top:0;left:0;right:0;z-index:9999}
+@keyframes gm{0%{background-position:0}100%{background-position:200%}}
+/* Login */
+.login-wrap{position:fixed;inset:0;background:var(--void);display:flex;align-items:center;justify-content:center;z-index:2000}
+.login-card{background:var(--deep);border:1px solid var(--border-hi);border-radius:16px;padding:36px;width:400px;box-shadow:0 32px 80px rgba(0,0,0,.7)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.login-inp-wrap{margin-bottom:14px}
+.login-lbl{font-size:12px;color:var(--t2);margin-bottom:5px}
+.err-box{background:var(--rdim);border:1px solid rgba(255,77,106,.3);border-radius:7px;padding:9px 13px;font-size:12.5px;color:var(--red);margin-bottom:14px}
+/* Chat */
+.chat-layout{display:flex;width:100%;overflow:hidden}
+.chat-hist-panel{width:230px;min-width:230px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.chp-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);font-family:var(--mono)}
+.chp-list{flex:1;overflow-y:auto;padding:6px}
+.chi{padding:9px 11px;border-radius:7px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;transition:all .15s}
+.chi:hover{background:var(--raised)}
+.chi.active{background:var(--adim);border-color:rgba(0,229,255,.2)}
+.chi-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chi-time{font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono)}
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.msg-row{display:flex;gap:10px;align-items:flex-start}
+.msg-row.user{flex-direction:row-reverse}
+.msg-av{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.msg-av.ai{background:linear-gradient(135deg,var(--accent),#0055ff);color:#000;font-family:var(--mono)}
+.msg-av.user{background:linear-gradient(135deg,var(--purple),#ff6b9d)}
+.msg-bubble{max-width:66%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.6}
+.msg-row.user .msg-bubble{background:var(--adim);border-color:rgba(0,229,255,.2)}
+.wf-card{background:var(--raised);border:1px solid var(--border-hi);border-radius:9px;padding:12px 14px;margin-top:10px}
+.wf-card-ttl{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);font-family:var(--mono);margin-bottom:8px}
+.node-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin:2px;font-family:var(--mono)}
+.pa{background:rgba(255,125,61,.12);color:#ff7d3d}.ps{background:rgba(0,214,143,.1);color:#00d68f}
+.ph{background:rgba(182,109,255,.1);color:#b66dff}.p3{background:rgba(255,176,32,.1);color:#ffb020}
+.pz{background:rgba(0,229,255,.1);color:var(--accent)}.pf{background:rgba(74,222,170,.1);color:#4adeaa}
+.pw{background:rgba(122,146,176,.1);color:var(--t2)}.pif{background:rgba(255,176,32,.12);color:var(--yellow)}
+.pwh{background:rgba(255,77,106,.1);color:var(--red)}
+.td{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:tp 1.2s infinite;opacity:.5;display:inline-block}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes tp{0%,80%,100%{transform:scale(1);opacity:.5}40%{transform:scale(1.4);opacity:1}}
+.chat-inp-area{padding:14px 16px;background:var(--deep);border-top:1px solid var(--border)}
+.qpills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.qpill{padding:4px 10px;background:var(--raised);border:1px solid var(--border);border-radius:14px;font-size:11px;color:var(--t2);cursor:pointer;transition:all .15s;font-family:var(--mono)}
+.qpill:hover{border-color:var(--accent);color:var(--accent)}
+.inp-wrap{display:flex;gap:8px;align-items:flex-end;background:var(--surface);border:1px solid var(--border-hi);border-radius:10px;padding:9px 12px;transition:border .2s}
+.inp-wrap:focus-within{border-color:var(--accent)}
+.chat-inp{flex:1;background:transparent;border:none;outline:none;color:var(--t1);font-family:var(--sans);font-size:13.5px;resize:none;max-height:100px;line-height:1.5}
+.chat-inp::placeholder{color:var(--t3)}
+.send-btn{width:32px;height:32px;background:var(--accent);border:none;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;color:#000;font-weight:700;font-size:14px}
+.send-btn:hover{background:#00cce8;transform:scale(1.05)}
+.send-btn:disabled{background:var(--border);cursor:not-allowed;transform:none;color:var(--t3)}
+/* Canvas */
+.wf-layout{display:flex;width:100%;overflow:hidden}
+.canvas-area{flex:1;position:relative;overflow:hidden}
+.canvas{width:100%;height:100%;background-color:var(--void);background-image:radial-gradient(circle,rgba(30,45,66,.8) 1px,transparent 1px);background-size:24px 24px;position:relative;cursor:grab;overflow:hidden}
+.canvas:active{cursor:grabbing}
+.canvas-tb{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:5px;display:flex;gap:3px;z-index:20;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.ctb{padding:5px 11px;border-radius:6px;background:transparent;border:none;color:var(--t2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:500;transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.ctb:hover{background:var(--raised);color:var(--t1)}
+.ctb.active{background:var(--adim);color:var(--accent)}
+.ctb:disabled{opacity:.4;cursor:not-allowed}
+.ct-sep{width:1px;background:var(--border);margin:3px 2px}
+.zoom-badge{position:absolute;bottom:14px;left:14px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;font-family:var(--mono);color:var(--t2);z-index:20}
+.wf-node{position:absolute;width:185px;background:var(--surface);border:1.5px solid var(--border);border-radius:11px;cursor:pointer;transition:border-color .15s,box-shadow .15s;user-select:none;z-index:5}
+.wf-node:hover{border-color:var(--border-hi);box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.wf-node.sel{box-shadow:0 0 0 2px var(--accent),0 4px 24px rgba(0,229,255,.15);border-color:var(--accent)}
+.node-hdr{padding:9px 11px 7px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border)}
+.node-ico{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.node-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.node-body{padding:7px 11px 9px}
+.node-prop{font-size:10.5px;color:var(--t2);margin-bottom:2px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-prop span{color:var(--t1)}
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sd-idle{background:var(--t3)}.sd-running{background:var(--yellow);animation:pulse 1s infinite}
+.sd-success{background:var(--green)}.sd-failed{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.port{width:10px;height:10px;background:var(--deep);border:2px solid var(--border-hi);border-radius:50%;position:absolute;transition:all .15s;cursor:crosshair;z-index:6}
+.port:hover{background:var(--accent);border-color:var(--accent)}
+.port-out{right:-6px;top:50%;transform:translateY(-50%)}.port-in{left:-6px;top:50%;transform:translateY(-50%)}
+.edges-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.palette{position:absolute;left:14px;top:66px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px;z-index:20;width:158px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.pal-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);padding:3px 7px 5px;font-family:var(--mono)}
+.pal-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--t2);transition:background .1s}
+.pal-item:hover{background:var(--raised);color:var(--t1)}
+.pal-ico{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.props-panel{width:290px;min-width:290px;background:var(--deep);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.pp-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.pp-title{font-size:12px;font-weight:700;font-family:var(--mono)}
+.pp-body{flex:1;overflow-y:auto;padding:14px}
+.pp-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--t3);padding:24px;text-align:center}
+.type-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:700;font-family:var(--mono);margin-bottom:14px}
+/* Live log panel */
+.log-panel{background:var(--void);border:1px solid var(--border);border-radius:7px;font-family:var(--mono);font-size:11px;padding:10px;max-height:200px;overflow-y:auto;margin-top:8px;line-height:1.7}
+.log-ok{color:var(--green)}.log-err{color:var(--red)}.log-info{color:var(--t2)}.log-warn{color:var(--yellow)}
+/* History */
+.page-content{flex:1;overflow-y:auto;padding:22px;background:var(--void)}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px 16px}
+.stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);font-family:var(--mono)}
+.stat-val{font-size:26px;font-weight:800;margin-top:4px;font-family:var(--mono)}
+.stat-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.tbl-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tbl-title{font-size:13px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:9px 14px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);border-bottom:1px solid var(--border);font-family:var(--mono);font-weight:400}
+td{padding:11px 14px;font-size:12.5px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--raised)}
+.mono{font-family:var(--mono);font-size:11.5px}
+.filter-row{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.filter-inp{flex:1;max-width:300px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none}
+.filter-inp:focus{border-color:var(--accent)}
+.sel-filter{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--t2);font-size:13px;outline:none;cursor:pointer}
+.tl-item{display:flex;gap:12px;margin-bottom:10px}
+.tl-dot-col{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.tl-line{flex:1;width:1px;background:var(--border);margin-top:3px}
+.tl-content{flex:1;background:var(--raised);border:1px solid var(--border);border-radius:7px;padding:9px 13px}
+/* Credentials */
+.creds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:16px}
+.cred-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:border-color .2s}
+.cred-card:hover{border-color:var(--border-hi)}
+.cred-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.cred-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.cred-body{padding:11px 14px}
+.cred-field{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cred-fk{font-size:11.5px;color:var(--t3)}.cred-fv{font-size:11.5px;font-family:var(--mono);color:var(--t2)}
+.cred-footer{padding:9px 14px;background:var(--raised);display:flex;gap:7px;justify-content:flex-end;border-top:1px solid var(--border)}
+.add-cred-card{background:transparent;border:1.5px dashed var(--border-hi);border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:28px;cursor:pointer;transition:all .2s;color:var(--t3);min-height:160px}
+.add-cred-card:hover{border-color:var(--accent);color:var(--accent);background:var(--aglow)}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.svc-opt{padding:9px 6px;background:var(--raised);border:1.5px solid var(--border);border-radius:7px;cursor:pointer;text-align:center;transition:all .15s;font-size:11.5px}
+.svc-opt:hover{border-color:var(--border-hi)}
+.svc-opt.svc-sel{border-color:var(--accent);background:var(--adim);color:var(--accent)}
+.svc-ico{font-size:18px;margin-bottom:3px}
+.enc-notice{background:var(--ydim);border:1px solid rgba(255,176,32,.25);border-radius:7px;padding:9px 13px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--yellow)}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);gap:10px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useReducer}=React;
+
+/* ── Node config ── */
+const NC={
+  trigger:      {bg:'rgba(255,176,32,.12)',  bd:'#ffb020',icon:'⚡',lbl:'TRIGGER'},
+  webhook:      {bg:'rgba(255,77,106,.12)',  bd:'#ff4d6a',icon:'🔗',lbl:'WEBHOOK'},
+  airflow:      {bg:'rgba(255,125,61,.12)',  bd:'#ff7d3d',icon:'🌀',lbl:'AIRFLOW'},
+  sql:          {bg:'rgba(0,214,143,.1)',    bd:'#00d68f',icon:'🗄️',lbl:'SQL'},
+  http:         {bg:'rgba(182,109,255,.1)', bd:'#b66dff',icon:'🌐',lbl:'HTTP'},
+  s3:           {bg:'rgba(255,176,32,.1)',  bd:'#ffb020',icon:'☁️',lbl:'S3'},
+  azure:        {bg:'rgba(0,229,255,.1)',   bd:'#00e5ff',icon:'⬡',lbl:'AZURE'},
+  sftp:         {bg:'rgba(74,222,170,.1)', bd:'#4adeaa',icon:'📁',lbl:'SFTP'},
+  wait:         {bg:'rgba(122,146,176,.1)',bd:'#7a92b0',icon:'⏱',lbl:'WAIT'},
+  if:           {bg:'rgba(255,176,32,.12)',bd:'#ffb020',icon:'⋔',lbl:'IF/ELSE'},
+  set_variable: {bg:'rgba(0,214,143,.08)', bd:'#00d68f',icon:'📌',lbl:'SET VAR'},
+  get_variable: {bg:'rgba(0,214,143,.06)', bd:'#4adeaa',icon:'📎',lbl:'GET VAR'},
+  code:         {bg:'rgba(182,109,255,.1)',bd:'#b66dff',icon:'</>', lbl:'CODE'},
+  call_workflow:{bg:'rgba(0,229,255,.08)', bd:'#00e5ff',icon:'↗',lbl:'CALL WF'},
+};
+
+const SCHEMAS={
+  trigger:[{k:'cron',l:'Cron',d:'0 6 * * *'},{k:'timezone',l:'Timezone',d:'UTC'}],
+  webhook:[{k:'method',l:'Method',t:'select',opts:['POST','GET','PUT']},{k:'auth_token',l:'Auth Token',d:''}],
+  airflow:[{k:'dag_id',l:'DAG ID',d:'my_dag'},{k:'timeout',l:'Timeout (s)',t:'number',d:3600},{k:'retries',l:'Retries',t:'number',d:2},{k:'conf',l:'Run Config (JSON)',d:'{}'},{k:'assert_log_contains',l:'Assert Log Contains',d:''},{k:'validate_tasks',l:'Validate Tasks (JSON array)',d:'[]'}],
+  sql:[{k:'query',l:'SQL Query',t:'textarea',d:'SELECT COUNT(*) FROM table'},{k:'expected_row_count',l:'Expected Row Count',t:'number',d:''},{k:'min_row_count',l:'Min Row Count',t:'number',d:''},{k:'assert_no_rows',l:'Assert No Rows',t:'select',opts:['false','true']},{k:'export_format',l:'Export Format',t:'select',opts:['none','csv','xlsx']}],
+  http:[{k:'method',l:'Method',t:'select',opts:['GET','POST','PUT','DELETE','PATCH']},{k:'url',l:'URL',d:'https://'},{k:'expected_status',l:'Expected Status',t:'number',d:200},{k:'headers',l:'Headers (JSON)',t:'textarea',d:'{}'},{k:'body',l:'Body (JSON)',t:'textarea',d:''},{k:'assert_body_contains',l:'Assert Body Contains',d:''},{k:'assert_json_field',l:'Assert JSON Field',d:''}],
+  s3:[{k:'bucket',l:'Bucket',d:''},{k:'key',l:'Object Key',d:'path/file.csv'},{k:'region',l:'Region',d:'us-east-1'},{k:'operation',l:'Operation',t:'select',opts:['upload','download','list','exists','delete']},{k:'local_path',l:'Local Path',d:''}],
+  azure:[{k:'container',l:'Container',d:''},{k:'blob_name',l:'Blob Name',d:'file.csv'},{k:'operation',l:'Operation',t:'select',opts:['upload','download','list','exists']},{k:'local_path',l:'Local Path',d:''}],
+  sftp:[{k:'remote_path',l:'Remote Path',d:'/data/'},{k:'local_path',l:'Local Path',d:'/tmp/file'},{k:'operation',l:'Operation',t:'select',opts:['upload','download','list','exists','delete']}],
+  wait:[{k:'duration',l:'Duration',t:'number',d:30},{k:'unit',l:'Unit',t:'select',opts:['seconds','minutes','hours']}],
+  if:[{k:'left_value',l:'Left Value',d:'{{$node.NodeName.output.field}}'},{k:'operator',l:'Operator',t:'select',opts:['equals','not_equals','contains','greater_than','less_than','is_empty','not_empty']},{k:'right_value',l:'Right Value',d:'0'},{k:'assert_true',l:'Assert True',t:'select',opts:['false','true']}],
+  set_variable:[
+    {k:'key',l:'Variable Key',d:'my_var'},
+    {k:'value',l:'Value (or expression)',d:'{{$node.SQL.output.rows_returned}}'},
+    {k:'scope',l:'Scope',t:'select',opts:['workflow','global']},
+    {k:'cast',l:'Cast To',t:'select',opts:['auto','string','number','boolean','json']},
+  ],
+  get_variable:[
+    {k:'key',l:'Variable Key',d:'my_var'},
+    {k:'default',l:'Default (if missing)',d:''},
+    {k:'assert_set',l:'Assert Variable Exists',t:'select',opts:['false','true']},
+  ],
+  code:[
+    {k:'code',l:'Python Code',t:'textarea',d:"output['result'] = input_data.get('rows_returned', 0)"},
+    {k:'timeout',l:'Timeout (s)',t:'number',d:30},
+    {k:'language',l:'Language',t:'select',opts:['python']},
+  ],
+  call_workflow:[
+    {k:'workflow_id',l:'Sub-Workflow ID',d:''},
+    {k:'fail_on_error',l:'Fail Parent on Error',t:'select',opts:['true','false']},
+  ],
+};
+
+/* ── API client ── */
+function makeApi(token){
+  return async function api(path, opts={}){
+    const res = await fetch(`/api${path}`,{
+      ...opts,
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(opts.headers||{})},
+    });
+    if(!res.ok){
+      const txt = await res.text();
+      let msg=txt;
+      try{msg=JSON.parse(txt).detail||txt;}catch(e){}
+      throw new Error(msg);
+    }
+    return res.json();
+  };
+}
+
+/* ── Toast ── */
+function Toast({toasts}){
+  return <div className="toast-wrap">
+    {toasts.map(t=>(
+      <div key={t.id} className={`toast toast-${t.type}`}>
+        <span>{t.type==='success'?'✅':t.type==='error'?'❌':'ℹ️'}</span>
+        <span style={{flex:1}}>{t.msg}</span>
+      </div>
+    ))}
+  </div>;
+}
+
+/* ── Login ── */
+function LoginPage({onLogin}){
+  const [email,setEmail]=useState('admin@flowforge.local');
+  const [pass,setPass]=useState('admin123');
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState('');
+
+  const submit=async(e)=>{
+    e.preventDefault();
+    setLoading(true);setErr('');
+    try{
+      const res=await fetch('/api/auth/login',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,password:pass}),
+      });
+      if(!res.ok){const d=await res.json();throw new Error(d.detail||'Login failed');}
+      const data=await res.json();
+      onLogin(data.access_token,data.user||{email,sub:email});
+    }catch(e){setErr(e.message);}
+    finally{setLoading(false);}
+  };
+
+  return <div className="login-wrap">
+    <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:'linear-gradient(90deg,transparent,var(--accent),var(--purple),var(--green),transparent)',backgroundSize:'200%',animation:'gm 3s linear infinite'}}/>
+    <div className="login-card">
+      <div className="login-logo">
+        <div className="logo-mark">FF</div>
+        <div>
+          <div style={{fontSize:18,fontWeight:800,color:'var(--accent)'}}>FlowForge</div>
+          <div style={{fontSize:10,color:'var(--t3)',fontFamily:'var(--mono)'}}>v3.0 · workflow automation</div>
+        </div>
+      </div>
+      {err&&<div className="err-box">⚠ {err}</div>}
+      <form onSubmit={submit}>
+        <div className="login-inp-wrap">
+          <div className="login-lbl">Email</div>
+          <input className="inp" type="email" value={email} onChange={e=>setEmail(e.target.value)} autoFocus/>
+        </div>
+        <div className="login-inp-wrap">
+          <div className="login-lbl">Password</div>
+          <input className="inp" type="password" value={pass} onChange={e=>setPass(e.target.value)}/>
+        </div>
+        <button className="btn btn-primary" style={{width:'100%',marginTop:6,padding:'10px'}} disabled={loading}>
+          {loading?'Signing in…':'Sign In →'}
+        </button>
+      </form>
+      <div style={{marginTop:14,fontSize:11,color:'var(--t3)',textAlign:'center',fontFamily:'var(--mono)'}}>
+        Default: admin@flowforge.local / admin123
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Chat Page ── */
+function ChatPage({api,addToast,onOpenWorkflow}){
+  const [input,setInput]=useState('');
+  const [typing,setTyping]=useState(false);
+  const [msgs,setMsgs]=useState([
+    {role:'ai',text:"Hi! I'm FlowForge AI. Describe your workflow in plain English — I'll generate nodes for Airflow, SQL, HTTP, S3, Azure, SFTP, webhooks and IF/ELSE branching."},
+  ]);
+  const [sessionId,setSessionId]=useState(null);
+  const endRef=useRef(null);
+
+  useEffect(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),[msgs,typing]);
+
+  const send=async()=>{
+    if(!input.trim()||typing) return;
+    const txt=input; setInput('');
+    setMsgs(m=>[...m,{role:'user',text:txt}]);
+    setTyping(true);
+    try{
+      const history=msgs.filter(m=>m.role==='user').map(m=>({role:'user',content:m.text}));
+      const res=await api('/chat/message',{
+        method:'POST',
+        body:JSON.stringify({message:txt,session_id:sessionId,history}),
+      });
+      setSessionId(res.session_id);
+      setMsgs(m=>[...m,{role:'ai',text:res.reply,workflow:res.workflow_dsl}]);
+    }catch(e){
+      addToast('error',`Chat error: ${e.message}`);
+      setMsgs(m=>[...m,{role:'ai',text:`Error: ${e.message}`}]);
+    }finally{setTyping(false);}
+  };
+
+  const saveAndOpen=async(dsl)=>{
+    try{
+      const wf=await api('/workflows',{method:'POST',body:JSON.stringify({name:dsl.name||'New Workflow',description:dsl.description||'',dsl,execution_mode:'manual'})});
+      addToast('success','Workflow saved');
+      onOpenWorkflow(wf);
+    }catch(e){addToast('error',`Save failed: ${e.message}`);}
+  };
+
+  const pillClass=(n)=>{
+    const t=n.toLowerCase();
+    if(/airflow|dag/.test(t)) return 'pa';
+    if(/sql|query/.test(t)) return 'ps';
+    if(/http|slack|api|notify/.test(t)) return 'ph';
+    if(/s3/.test(t)) return 'p3';
+    if(/azure/.test(t)) return 'pz';
+    if(/sftp/.test(t)) return 'pf';
+    if(/if|check|branch/.test(t)) return 'pif';
+    if(/webhook/.test(t)) return 'pwh';
+    return 'pw';
+  };
+
+  const quick=['Trigger ETL DAG, validate row count 3000, notify Slack','Run S3 upload pipeline and check file exists','Webhook → HTTP API call → assert JSON response','Airflow DAG with log validation and SQL assertion'];
+
+  return <div className="chat-layout">
+    <div className="chat-hist-panel">
+      <div className="chp-hdr">
+        <span className="chp-lbl">Sessions</span>
+        <button className="btn btn-ghost btn-sm" onClick={()=>{setMsgs([{role:'ai',text:'New session. Describe your workflow.'}]);setSessionId(null);}}>+ New</button>
+      </div>
+      <div className="chp-list" style={{padding:12,color:'var(--t3)',fontSize:12}}>Sessions are stored per login session.</div>
+    </div>
+    <div className="chat-main">
+      <div className="chat-msgs">
+        {msgs.map((m,i)=>(
+          <div key={i} className={`msg-row ${m.role}`}>
+            <div className={`msg-av ${m.role}`}>{m.role==='ai'?'FF':'U'}</div>
+            <div className="msg-bubble">
+              <div style={{whiteSpace:'pre-wrap'}}>{m.text}</div>
+              {m.workflow&&(
+                <div className="wf-card">
+                  <div className="wf-card-ttl">⚡ Generated Workflow</div>
+                  <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>{m.workflow.name}</div>
+                  <div>
+                    {(m.workflow.nodes||[]).map((n,ni)=>(
+                      <React.Fragment key={ni}>
+                        <span className={`node-pill ${pillClass(n.title||n.type)}`}>{NC[n.type]?.icon||'⬡'} {n.title}</span>
+                        {ni<m.workflow.nodes.length-1&&<span style={{color:'var(--t3)',fontSize:11,margin:'0 1px'}}>→</span>}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                  <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
+                    <button className="btn btn-primary btn-sm" onClick={()=>saveAndOpen(m.workflow)}>Save & Open Editor →</button>
+                    <button className="btn btn-ghost btn-sm" onClick={()=>addToast('info','Use the editor to export PyTest')}>📥 Export PyTest</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        {typing&&(
+          <div className="msg-row">
+            <div className="msg-av ai">FF</div>
+            <div className="msg-bubble"><div style={{display:'flex',gap:4}}><div className="td"/><div className="td"/><div className="td"/></div></div>
+          </div>
+        )}
+        <div ref={endRef}/>
+      </div>
+      <div className="chat-inp-area">
+        <div className="qpills">{quick.map((q,i)=><span key={i} className="qpill" onClick={()=>setInput(q)}>{q}</span>)}</div>
+        <div className="inp-wrap">
+          <textarea className="chat-inp" rows={1} placeholder="Describe your workflow…"
+            value={input} onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}/>
+          <button className="send-btn" onClick={send} disabled={!input.trim()||typing}>↑</button>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Workflow Editor ── */
+function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
+  const [wf,setWf]=useState(initialWorkflow||{id:null,name:'New Workflow',nodes:[],edges:[]});
+  const [sel,setSel]=useState(null);
+  const [dragId,setDragId]=useState(null);
+  const [dragOff,setDragOff]=useState({x:0,y:0});
+  const [pan,setPan]=useState({x:0,y:0});
+  const [panStart,setPanStart]=useState(null);
+  const [zoom,setZoom]=useState(1);
+  const [execStatus,setExecStatus]=useState({});
+  const [running,setRunning]=useState(false);
+  const [showPalette,setShowPalette]=useState(false);
+  const [history,setHistory]=useState([]);
+  const [future,setFuture]=useState([]);
+  const [liveLog,setLiveLog]=useState('');
+  const [runId,setRunId]=useState(null);
+  const [showSettings,setShowSettings]=useState(false);
+  const canvasRef=useRef(null);
+  const wsRef=useRef(null);
+
+  useEffect(()=>{if(initialWorkflow) setWf({nodes:[],edges:[],...initialWorkflow});},[initialWorkflow]);
+
+  const dsl={nodes:wf.nodes||[],edges:wf.edges||[]};
+  const selNode=dsl.nodes.find(n=>n.id===sel);
+
+  const pushHistory=useCallback((state)=>{setHistory(h=>[...h.slice(-19),state]);setFuture([]);},[]);
+  const undo=()=>{if(!history.length)return;const p=history[history.length-1];setFuture(f=>[wf,...f]);setHistory(h=>h.slice(0,-1));setWf(p);};
+  const redo=()=>{if(!future.length)return;const n=future[0];setHistory(h=>[...h,wf]);setFuture(f=>f.slice(1));setWf(n);};
+
+  const onMouseDownNode=useCallback((e,nodeId)=>{
+    e.stopPropagation();setSel(nodeId);
+    const node=dsl.nodes.find(n=>n.id===nodeId);
+    setDragId(nodeId);setDragOff({x:e.clientX-node.x*zoom-pan.x,y:e.clientY-node.y*zoom-pan.y});
+  },[dsl.nodes,zoom,pan]);
+
+  const onMouseMove=useCallback((e)=>{
+    if(dragId){
+      const nx=(e.clientX-dragOff.x-pan.x)/zoom;
+      const ny=(e.clientY-dragOff.y-pan.y)/zoom;
+      setWf(w=>({...w,nodes:(w.nodes||[]).map(n=>n.id===dragId?{...n,x:Math.max(0,nx),y:Math.max(0,ny)}:n)}));
+    }
+    if(panStart){setPan(p=>({x:p.x+(e.clientX-panStart.x),y:p.y+(e.clientY-panStart.y)}));setPanStart({x:e.clientX,y:e.clientY});}
+  },[dragId,dragOff,pan,zoom,panStart]);
+
+  const onMouseUp=useCallback(()=>{if(dragId){pushHistory(wf);setDragId(null);}setPanStart(null);},[dragId,wf,pushHistory]);
+  const onCanvasDown=(e)=>{if(e.target===canvasRef.current||e.target.tagName==='svg'||e.target.tagName==='path'){setSel(null);setPanStart({x:e.clientX,y:e.clientY});}};
+  const onWheel=useCallback((e)=>{e.preventDefault();setZoom(z=>Math.min(2,Math.max(0.3,z*(e.deltaY>0?.9:1.1))));},[]);
+  useEffect(()=>{const c=canvasRef.current;if(c)c.addEventListener('wheel',onWheel,{passive:false});return()=>{if(c)c.removeEventListener('wheel',onWheel);};},[onWheel]);
+
+  const save=async()=>{
+    try{
+      const payload={name:wf.name||'Workflow',description:wf.description||'',dsl:{nodes:wf.nodes||[],edges:wf.edges||[]},execution_mode:wf.execution_mode||'manual'};
+      let saved;
+      if(wf.id){
+        saved=await api(`/workflows/${wf.id}`,{method:'PUT',body:JSON.stringify(payload)});
+      } else {
+        saved=await api('/workflows',{method:'POST',body:JSON.stringify(payload)});
+      }
+      setWf(w=>({...w,...saved}));
+      addToast('success','Workflow saved ✓');
+    }catch(e){addToast('error',`Save failed: ${e.message}`);}
+  };
+
+  const execute=async()=>{
+    if(!wf.id){addToast('error','Save the workflow first');return;}
+    setRunning(true);setLiveLog('Starting execution…\n');setExecStatus({});
+    try{
+      const res=await api(`/executions/${wf.id}/run`,{method:'POST',body:JSON.stringify({triggered_by:'manual'})});
+      const rid=res.run_id;setRunId(rid);
+      addToast('info',`Run ${rid} queued — watching live…`);
+
+      // Open WebSocket for live updates
+      if(wsRef.current) wsRef.current.close();
+      const wsUrl=`ws://${window.location.host}/ws/execution/${rid}`;
+      const ws=new WebSocket(wsUrl);
+      wsRef.current=ws;
+
+      ws.onmessage=(e)=>{
+        const ev=JSON.parse(e.data);
+        if(ev.type==='node_update'){
+          setExecStatus(s=>({...s,[ev.node_id]:ev.status}));
+          if(ev.log) setLiveLog(l=>l+ev.log+'\n');
+        } else if(ev.type==='run_complete'){
+          setRunning(false);
+          addToast(ev.status==='success'?'success':'error',`Run ${rid}: ${ev.status} (${(ev.duration||0).toFixed(1)}s)`);
+          ws.close();
+        } else if(ev.type==='error'){
+          setLiveLog(l=>l+`[ERROR] ${ev.message}\n`);
+          setRunning(false);
+        }
+      };
+      ws.onerror=()=>{addToast('error','WebSocket connection failed');setRunning(false);};
+      ws.onclose=()=>setRunning(false);
+    }catch(e){
+      addToast('error',`Execute failed: ${e.message}`);
+      setRunning(false);
+    }
+  };
+
+  const addNode=(type)=>{
+    const id='n'+Date.now();
+    const cfg=NC[type];
+    pushHistory(wf);
+    setWf(w=>({...w,nodes:[...(w.nodes||[]),{id,type,x:200+Math.random()*250,y:100+Math.random()*200,title:`New ${cfg.lbl}`,props:{}}]}));
+    setSel(id);setShowPalette(false);
+  };
+
+  const deleteNode=(id)=>{
+    pushHistory(wf);
+    setWf(w=>({...w,nodes:(w.nodes||[]).filter(n=>n.id!==id),edges:(w.edges||[]).filter(e=>e.from!==id&&e.to!==id)}));
+    setSel(null);addToast('info','Node deleted');
+  };
+
+  const updateProp=(nodeId,key,val)=>{
+    setWf(w=>({...w,nodes:(w.nodes||[]).map(n=>n.id===nodeId?{...n,props:{...n.props,[key]:val}}:n)}));
+  };
+
+  const exportPytest=async(mode='run')=>{
+    if(!wf.id){addToast('error','Save the workflow first');return;}
+    const safeName=(wf.name||'wf').toLowerCase().replace(/\s+/g,'_');
+    try{
+      if(mode==='run'){
+        const res=await fetch(`/api/pytest/generate-from-run`,{
+          method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body:JSON.stringify({workflow_id:wf.id}),
+        });
+        if(res.status===404){addToast('info','No executions yet — using DSL mode.');exportPytest('dsl');return;}
+        if(!res.ok) throw new Error(await res.text());
+        const code=await res.text();
+        const blob=new Blob([code],{type:'text/plain'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download=`test_${safeName}_run_powered.py`;a.click();
+        addToast('success','✅ Run-powered PyTest! Assertions reference real execution data.');
+        return;
+      }
+      // DSL fallback
+      const res=await fetch(`/api/pytest/generate`,{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({workflow_dsl:wf.dsl||{nodes:wf.nodes||[],edges:wf.edges||[]},workflow_id:wf.id}),
+      });
+      const code=await res.text();
+      const blob=new Blob([code],{type:'text/plain'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=`test_${safeName}.py`;a.click();
+      addToast('success','PyTest exported (DSL mode).');
+    }catch(e){addToast('error',`Export failed: ${e.message}`);}
+  };
+
+  const exportPytestZip=async()=>{
+    if(!wf.id){addToast('error','Save the workflow first');return;}
+    const safeName=(wf.name||'wf').toLowerCase().replace(/\s+/g,'_');
+    try{
+      const res=await fetch(`/api/pytest/generate-zip`,{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({workflow_id:wf.id}),
+      });
+      if(!res.ok) throw new Error(await res.text());
+      const blob=await res.blob();
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=`flowforge_${safeName}_tests.zip`;a.click();
+      addToast('success','📦 Full CI package: test + conftest + .env + GitHub Actions');
+    }catch(e){addToast('error',`ZIP export failed: ${e.message}`);}
+  };
+
+  const nodes=dsl.nodes||[];const edges=dsl.edges||[];
+
+  return <div className="wf-layout">
+    <div className="canvas-area">
+      <div className="canvas-tb">
+        <button className="ctb" onClick={()=>setShowPalette(s=>!s)}>➕ Add</button>
+        <div className="ct-sep"/>
+        <button className="ctb" onClick={undo} disabled={!history.length}>↩</button>
+        <button className="ctb" onClick={redo} disabled={!future.length}>↪</button>
+        <div className="ct-sep"/>
+        <button className="ctb" onClick={save}>💾 Save</button>
+        <button className={`ctb ${running?'active':''}`} onClick={execute} disabled={running}>
+          {running?'⏳ Running…':'▶ Execute'}
+        </button>
+        <div className="ct-sep"/>
+        <button className="ctb" onClick={()=>exportPytest('run')}>📥 PyTest</button>
+        <button className="ctb" onClick={exportPytestZip} title="Download full CI zip">📦 ZIP</button>
+        {runId&&<button className="ctb" onClick={()=>{window.open(`/api/executions/${runId}/logs`,'_blank');}}>📋 Logs</button>}
+        <div className="ct-sep"/>
+        <button className="ctb" onClick={()=>{setPan({x:0,y:0});setZoom(1);}}>⊡</button>
+        <button className="ctb" onClick={()=>setShowSettings(true)}>⚙️</button>
+      </div>
+      {showSettings&&wf.id&&<WorkflowSettingsModal wf={wf} api={api} addToast={addToast}
+        onClose={()=>setShowSettings(false)} onSave={updated=>setWf(w=>({...w,...updated}))}
+        workflows={workflows||[]}/>}
+      {showPalette&&(
+        <div className="palette">
+          <div className="pal-lbl">Add Node</div>
+          {Object.entries(NC).map(([type,cfg])=>(
+            <div key={type} className="pal-item" onClick={()=>addNode(type)}>
+              <div className="pal-ico" style={{background:cfg.bg,border:`1px solid ${cfg.bd}`}}>{cfg.icon}</div>
+              <span>{cfg.lbl}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="canvas" ref={canvasRef}
+        onMouseDown={onCanvasDown} onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+        <svg className="edges-svg">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="var(--border-hi)"/>
+            </marker>
+            <marker id="arr-ok" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="var(--green)"/>
+            </marker>
+          </defs>
+          {edges.map((e,i)=>{
+            const fn=nodes.find(n=>n.id===e.from);const tn=nodes.find(n=>n.id===e.to);
+            if(!fn||!tn) return null;
+            const fx=fn.x*zoom+185*zoom+pan.x,fy=fn.y*zoom+42*zoom+pan.y;
+            const tx=tn.x*zoom+pan.x,ty=tn.y*zoom+42*zoom+pan.y;
+            const mx=(fx+tx)/2;
+            const ok=execStatus[e.from]==='success';
+            const run=execStatus[e.from]==='running';
+            return <path key={i}
+              d={`M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}`}
+              stroke={ok?'var(--green)':run?'var(--yellow)':'var(--border-hi)'}
+              strokeWidth={run?2.5:1.5} fill="none"
+              strokeDasharray={run?'6 4':'none'}
+              markerEnd={ok?'url(#arr-ok)':'url(#arr)'}
+              opacity={0.75}/>;
+          })}
+        </svg>
+        {nodes.map(node=>{
+          const cfg=NC[node.type]||NC.trigger;
+          const status=execStatus[node.id]||'idle';
+          return <div key={node.id}
+            className={`wf-node ${sel===node.id?'sel':''}`}
+            style={{left:node.x*zoom+pan.x,top:node.y*zoom+pan.y,borderColor:sel===node.id?cfg.bd:undefined,transform:`scale(${zoom})`,transformOrigin:'top left'}}
+            onMouseDown={e=>onMouseDownNode(e,node.id)}>
+            <div className="node-hdr">
+              <div className="node-ico" style={{background:cfg.bg}}>{cfg.icon}</div>
+              <div className="node-title">{node.title}</div>
+              <div className={`sdot sd-${status}`}/>
+            </div>
+            <div className="node-body">
+              {Object.entries(node.props||{}).slice(0,2).map(([k,v])=>(
+                <div key={k} className="node-prop">{k}: <span>{String(v).slice(0,22)}</span></div>
+              ))}
+            </div>
+            <div className="port port-in"/><div className="port port-out"/>
+          </div>;
+        })}
+      </div>
+      <div className="zoom-badge">{Math.round(zoom*100)}%</div>
+      {liveLog&&(
+        <div style={{position:'absolute',bottom:40,left:14,right:14,maxHeight:180,zIndex:20}}>
+          <div style={{fontSize:10,color:'var(--t3)',fontFamily:'var(--mono)',marginBottom:3}}>LIVE EXECUTION LOG</div>
+          <div className="log-panel">
+            {liveLog.split('\n').map((line,i)=>{
+              const cls=line.includes('[OK]')?'log-ok':line.includes('[ERROR]')?'log-err':line.includes('[WARN]')?'log-warn':'log-info';
+              return <div key={i} className={cls}>{line}</div>;
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+    <div className="props-panel">
+      <div className="pp-hdr">
+        <span className="pp-title">{selNode?'Properties':'Select a Node'}</span>
+        {selNode&&<button className="btn btn-danger btn-sm" onClick={()=>deleteNode(sel)}>✕</button>}
+      </div>
+      {selNode
+        ? <NodeProps node={selNode} onChange={updateProp} api={api} addToast={addToast}/>
+        : <div className="pp-empty"><div style={{fontSize:32,opacity:.4}}>⬡</div><div style={{fontSize:13}}>Click a node to edit its properties.</div></div>
+      }
+      {selNode&&(
+        <div style={{padding:'12px 14px',borderTop:'1px solid var(--border)'}}>
+          <button className="btn btn-primary" style={{width:'100%'}} onClick={save}>Save Changes</button>
+        </div>
+      )}
+    </div>
+  </div>;
+}
+
+function NodeProps({node,onChange,api,addToast}){
+  const cfg=NC[node.type]||NC.trigger;
+  const schema=SCHEMAS[node.type]||[];
+  const [creds,setCreds]=useState([]);
+  const [wfs,setWfs]=useState([]);
+  useEffect(()=>{
+    api('/credentials').then(d=>setCreds(d.credentials||[])).catch(()=>{});
+    api('/workflows').then(d=>setWfs(d.workflows||[])).catch(()=>{});
+  },[]);
+
+  const isCode=node.type==='code';
+  const isCallWf=node.type==='call_workflow';
+  const needsCred=!['set_variable','get_variable','code','call_workflow','wait','if','trigger','webhook'].includes(node.type);
+
+  return <div className="pp-body">
+    <div className="type-chip" style={{background:cfg.bg,border:`1px solid ${cfg.bd}`,color:cfg.bd}}>{cfg.icon} {cfg.lbl}</div>
+    <div className="prop-grp">
+      <div className="prop-grp-lbl">General</div>
+      <div className="prop-field">
+        <div className="prop-lbl">Node Title</div>
+        <input className="inp" defaultValue={node.title} onBlur={e=>onChange(node.id,'__title',e.target.value)}/>
+      </div>
+      {needsCred&&<div className="prop-field">
+        <div className="prop-lbl">Credential</div>
+        <select className="sel" defaultValue={node.props?.credential||''} onChange={e=>onChange(node.id,'credential',e.target.value)}>
+          <option value="">— None —</option>
+          {creds.map(c=><option key={c.id} value={c.name}>{c.name} ({c.service_type})</option>)}
+        </select>
+      </div>}
+    </div>
+    <div className="prop-grp">
+      <div className="prop-grp-lbl">Configuration</div>
+      {schema.map(field=>{
+        // Special: call_workflow workflow picker
+        if(isCallWf&&field.k==='workflow_id') return (
+          <div key={field.k} className="prop-field">
+            <div className="prop-lbl">Sub-Workflow</div>
+            <select className="sel" defaultValue={node.props?.[field.k]||''} onChange={e=>onChange(node.id,field.k,e.target.value)}>
+              <option value="">— Select workflow —</option>
+              {wfs.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}
+            </select>
+            <div className="hint">Select the workflow to call inline</div>
+          </div>
+        );
+        return (
+          <div key={field.k} className="prop-field">
+            <div className="prop-lbl">{field.l}</div>
+            {field.t==='textarea'
+              ? <textarea className="ta" style={isCode&&field.k==='code'?{minHeight:120,fontFamily:'var(--mono)',fontSize:12}:{}}
+                  defaultValue={node.props?.[field.k]??field.d??''} onChange={e=>onChange(node.id,field.k,e.target.value)}/>
+              : field.t==='select'
+              ? <select className="sel" defaultValue={node.props?.[field.k]??field.opts?.[0]} onChange={e=>onChange(node.id,field.k,e.target.value)}>
+                  {(field.opts||[]).map(o=><option key={o}>{o}</option>)}
+                </select>
+              : <input className="inp" type={field.t||'text'} defaultValue={node.props?.[field.k]??field.d??''} onChange={e=>onChange(node.id,field.k,field.t==='number'?Number(e.target.value):e.target.value)}/>
+            }
+            {(String(node.props?.[field.k]||field.d||'')).includes('{{')&&<div className="hint">💡 Expression — references upstream node output or $var.key</div>}
+          </div>
+        );
+      })}
+      {isCode&&<div style={{background:'rgba(182,109,255,.07)',border:'1px solid rgba(182,109,255,.2)',borderRadius:7,padding:'8px 11px',fontSize:11,color:'var(--t2)',marginTop:6}}>
+        <div style={{fontWeight:700,marginBottom:4,color:'var(--purple)'}}>Available in code:</div>
+        <div className="mono">input_data</div><div style={{color:'var(--t3)',fontSize:10,marginBottom:3}}>— dict of all upstream node outputs</div>
+        <div className="mono">output</div><div style={{color:'var(--t3)',fontSize:10,marginBottom:3}}>— dict — write results here</div>
+        <div className="mono">log(msg)</div><div style={{color:'var(--t3)',fontSize:10}}>— NodeLogger.info()</div>
+      </div>}
+    </div>
+    <div className="prop-grp">
+      <div className="prop-grp-lbl">On Failure</div>
+      <div className="prop-field">
+        <div className="prop-lbl">Action</div>
+        <select className="sel" defaultValue={node.props?.on_failure||'stop'} onChange={e=>onChange(node.id,'on_failure',e.target.value)}>
+          <option value="stop">Stop workflow</option>
+          <option value="continue">Continue to next</option>
+        </select>
+      </div>
+      <div className="prop-field">
+        <div className="prop-lbl">Retries</div>
+        <input className="inp" type="number" min="0" max="5" defaultValue={node.props?.retries??0} onChange={e=>onChange(node.id,'retries',Number(e.target.value))}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── History Page ── */
+function HistoryPage({api,addToast}){
+  const [runs,setRuns]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [filter,setFilter]=useState('');
+  const [statusFilter,setStatusFilter]=useState('all');
+  const [selRun,setSelRun]=useState(null);
+
+  const load=async()=>{
+    setLoading(true);
+    try{const d=await api('/executions/');setRuns(d.executions||[]);}
+    catch(e){addToast('error',`Load failed: ${e.message}`);}
+    finally{setLoading(false);}
+  };
+  useEffect(()=>{load();},[]);
+
+  const filtered=runs.filter(r=>
+    (r.workflow_name||'').toLowerCase().includes(filter.toLowerCase())&&
+    (statusFilter==='all'||r.status===statusFilter)
+  );
+  const stats={total:runs.length,success:runs.filter(r=>r.status==='success').length,failed:runs.filter(r=>r.status==='failed').length,running:runs.filter(r=>r.status==='running').length};
+
+  if(loading) return <div className="loading">⏳ Loading execution history…</div>;
+
+  return <div className="page-content">
+    <div className="stats-row">
+      {[['Total Runs',stats.total,'var(--t1)','All time'],['Successful',stats.success,'var(--green)',`${stats.total?Math.round(stats.success/stats.total*100):0}% rate`],['Failed',stats.failed,'var(--red)','Needs attention'],['Running',stats.running,'var(--yellow)','In progress']].map(([l,v,c,s])=>(
+        <div key={l} className="stat-card">
+          <div className="stat-lbl">{l}</div>
+          <div className="stat-val" style={{color:c}}>{v}</div>
+          <div className="stat-sub">{s}</div>
+        </div>
+      ))}
+    </div>
+    <div className="filter-row">
+      <input className="filter-inp" placeholder="🔍 Search…" value={filter} onChange={e=>setFilter(e.target.value)}/>
+      <select className="sel-filter" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
+        <option value="all">All Status</option><option value="success">Success</option><option value="failed">Failed</option><option value="running">Running</option>
+      </select>
+      <button className="btn btn-ghost btn-sm" onClick={load}>🔄 Refresh</button>
+    </div>
+    <div className="tbl-card">
+      <div className="tbl-hdr"><span className="tbl-title">Execution History</span><span className="tag">{filtered.length} runs</span></div>
+      <table>
+        <thead><tr><th>Workflow</th><th>Run ID</th><th>Status</th><th>Started</th><th>Duration</th><th>Actions</th></tr></thead>
+        <tbody>
+          {filtered.length===0&&<tr><td colSpan={6} style={{textAlign:'center',color:'var(--t3)',padding:32}}>No executions found.</td></tr>}
+          {filtered.map(r=>(
+            <tr key={r.id}>
+              <td style={{fontWeight:600}}>{r.workflow_name}</td>
+              <td><span className="mono">{r.id}</span></td>
+              <td><span className={`badge badge-${r.status}`}>{r.status}</span></td>
+              <td><span className="mono">{r.started_at?new Date(r.started_at).toLocaleString():'-'}</span></td>
+              <td><span className="mono">{r.duration_seconds?`${r.duration_seconds.toFixed(1)}s`:'-'}</span></td>
+              <td><div style={{display:'flex',gap:5}}>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setSelRun(r)}>📋 Logs</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>{window.open(`/api/executions/${r.id}/logs`,'_blank');}}>⬇</button>
+              </div></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {selRun&&<ExecModal runId={selRun.id} api={api} onClose={()=>setSelRun(null)} addToast={addToast}/>}
+  </div>;
+}
+
+function ExecModal({runId,api,onClose,addToast}){
+  const [run,setRun]=useState(null);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    api(`/executions/${runId}`).then(d=>{setRun(d);setLoading(false);}).catch(e=>{addToast('error',e.message);onClose();});
+  },[runId]);
+
+  if(loading) return <div className="overlay"><div className="modal modal-sm"><div className="loading">Loading…</div></div></div>;
+  if(!run) return null;
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal">
+      <div className="mhdr">
+        <div>
+          <div className="mtitle">Execution: {run.id}</div>
+          <div style={{fontSize:11,color:'var(--t3)',marginTop:2,fontFamily:'var(--mono)'}}>{run.workflow_id}</div>
+        </div>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <span className={`badge badge-${run.status}`}>{run.status}</span>
+          <button className="mclose" onClick={onClose}>×</button>
+        </div>
+      </div>
+      <div className="mbody">
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:18}}>
+          {[['Duration',run.duration_seconds?`${run.duration_seconds.toFixed(1)}s`:'-'],['Started',run.started_at?new Date(run.started_at).toLocaleTimeString():'-'],['Triggered By',run.triggered_by||'-']].map(([k,v])=>(
+            <div key={k} style={{background:'var(--raised)',border:'1px solid var(--border)',borderRadius:7,padding:'9px 12px'}}>
+              <div style={{fontSize:10,color:'var(--t3)',marginBottom:3,fontFamily:'var(--mono)'}}>{k.toUpperCase()}</div>
+              <div style={{fontSize:12.5,fontWeight:600}}>{v}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{fontWeight:700,marginBottom:12,fontSize:13}}>Node Timeline</div>
+        {(run.node_runs||[]).map((nr,i)=>{
+          const cfg=NC[nr.node_type]||NC.trigger;
+          const lines=(nr.log||'').split('\n').filter(Boolean);
+          return <div key={i} className="tl-item">
+            <div className="tl-dot-col">
+              <div className="tl-dot" style={{background:nr.status==='success'?'var(--green)':nr.status==='failed'?'var(--red)':'var(--t3)'}}/>
+              {i<run.node_runs.length-1&&<div className="tl-line"/>}
+            </div>
+            <div className="tl-content" style={{marginBottom:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                <div style={{fontWeight:600,fontSize:13}}>{cfg.icon} {nr.node_title}</div>
+                <div style={{display:'flex',gap:7,alignItems:'center'}}>
+                  {nr.attempt>1&&<span className="tag">attempt {nr.attempt}</span>}
+                  <span className="mono" style={{color:'var(--t3)',fontSize:11}}>{nr.duration_seconds?`${nr.duration_seconds.toFixed(2)}s`:''}</span>
+                  <span className={`badge badge-${nr.status}`}>{nr.status}</span>
+                </div>
+              </div>
+              {lines.length>0&&(
+                <div className="log-panel">
+                  {lines.map((line,li)=>{
+                    const cls=line.includes('[OK]')?'log-ok':line.includes('[ERROR]')?'log-err':line.includes('[WARN]')?'log-warn':'log-info';
+                    return <div key={li} className={cls}>{line}</div>;
+                  })}
+                </div>
+              )}
+              {nr.error&&<div style={{marginTop:6,padding:'6px 10px',background:'var(--rdim)',border:'1px solid rgba(255,77,106,.25)',borderRadius:5,fontSize:11.5,color:'var(--red)',fontFamily:'var(--mono)'}}>{nr.error}</div>}
+            </div>
+          </div>;
+        })}
+      </div>
+      <div className="mfoot">
+        <button className="btn btn-ghost btn-sm" onClick={()=>window.open(`/api/executions/${run.id}/logs`,'_blank')}>📋 Full Log</button>
+        <button className="btn btn-secondary btn-sm" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Credentials Page ── */
+function CredentialsPage({api,addToast}){
+  const [creds,setCreds]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [showModal,setShowModal]=useState(false);
+  const [editCred,setEditCred]=useState(null);
+  const [selType,setSelType]=useState('airflow');
+  const [formName,setFormName]=useState('');
+  const [formFields,setFormFields]=useState({});
+  const [saving,setSaving]=useState(false);
+
+  const SVCS=[
+    {type:'airflow',icon:'🌀',lbl:'Airflow',fields:['base_url','username','password']},
+    {type:'mssql',icon:'🗄️',lbl:'MSSQL',fields:['server','database','username','password']},
+    {type:'http',icon:'🌐',lbl:'HTTP',fields:['base_url','bearer_token','api_key']},
+    {type:'s3',icon:'☁️',lbl:'S3',fields:['region','access_key_id','secret_access_key']},
+    {type:'azure',icon:'⬡',lbl:'Azure',fields:['account_name','container','storage_key']},
+    {type:'sftp',icon:'📁',lbl:'SFTP',fields:['host','username','password','port']},
+  ];
+
+  const load=async()=>{
+    try{const d=await api('/credentials');setCreds(d.credentials||[]);}
+    catch(e){addToast('error',`Load failed: ${e.message}`);}
+    finally{setLoading(false);}
+  };
+  useEffect(()=>{load();},[]);
+
+  const openAdd=()=>{setEditCred(null);setFormName('');setFormFields({});setSelType('airflow');setShowModal(true);};
+  const openEdit=(c)=>{setEditCred(c);setSelType(c.service_type||'airflow');setFormName(c.name);setShowModal(true);};
+
+  const save=async()=>{
+    setSaving(true);
+    try{
+      const payload={name:formName||'NEW_CRED',service_type:selType,fields:formFields};
+      if(editCred){
+        await api(`/credentials/${editCred.id}`,{method:'PUT',body:JSON.stringify(payload)});
+        addToast('success','Credential updated');
+      } else {
+        await api('/credentials',{method:'POST',body:JSON.stringify(payload)});
+        addToast('success','Credential saved (AES-256 encrypted)');
+      }
+      setShowModal(false);load();
+    }catch(e){addToast('error',`Save failed: ${e.message}`);}
+    finally{setSaving(false);}
+  };
+
+  const del=async(id)=>{
+    if(!confirm('Delete this credential?')) return;
+    try{await api(`/credentials/${id}`,{method:'DELETE'});addToast('info','Deleted');load();}
+    catch(e){addToast('error',e.message);}
+  };
+
+  const test=async(c)=>{
+    addToast('info',`Testing ${c.name}…`);
+    try{
+      const res=await api(`/credentials/${c.id}/test`,{method:'POST'});
+      addToast(res.status==='ok'?'success':'error',`${c.name}: ${res.status}${res.error?` — ${res.error}`:''}`);
+    }catch(e){addToast('error',e.message);}
+  };
+
+  const currSvc=SVCS.find(s=>s.type===selType)||SVCS[0];
+  if(loading) return <div className="loading">⏳ Loading credentials…</div>;
+
+  return <div className="page-content">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+      <div>
+        <h2 style={{fontSize:18,fontWeight:800}}>Credential Vault</h2>
+        <p style={{fontSize:13,color:'var(--t3)',marginTop:3}}>AES-256-GCM encrypted. Secrets never exposed to frontend.</p>
+      </div>
+      <button className="btn btn-primary" onClick={openAdd}>+ Add Credential</button>
+    </div>
+    <div className="enc-notice">🔐 All credentials encrypted at rest. Nodes reference by name — secrets never transmitted to browser.</div>
+    <div className="creds-grid">
+      {creds.map(c=>(
+        <div key={c.id} className="cred-card">
+          <div className="cred-hdr">
+            <div className="cred-icon" style={{background:'rgba(0,229,255,.1)',border:'1px solid rgba(0,229,255,.2)'}}>
+              {SVCS.find(s=>s.type===c.service_type)?.icon||'🔑'}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:14}}>{c.name}</div>
+              <div style={{fontSize:11,color:'var(--t3)',fontFamily:'var(--mono)',marginTop:2}}>{(c.service_type||'').toUpperCase()}</div>
+            </div>
+          </div>
+          <div className="cred-body">
+            {Object.entries(c.masked_fields||{}).map(([k,v])=>(
+              <div key={k} className="cred-field">
+                <span className="cred-fk">{k}</span>
+                <span className="cred-fv">{String(v)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="cred-footer">
+            <button className="btn btn-ghost btn-sm" onClick={()=>test(c)}>🔌 Test</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(c)}>✏️ Edit</button>
+            <button className="btn btn-danger btn-sm" onClick={()=>del(c.id)}>✕</button>
+          </div>
+        </div>
+      ))}
+      <div className="add-cred-card" onClick={openAdd}><div style={{fontSize:28}}>+</div><div style={{fontSize:13,fontWeight:600}}>Add New Credential</div></div>
+    </div>
+    {showModal&&(
+      <div className="overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+        <div className="modal modal-sm">
+          <div className="mhdr">
+            <div className="mtitle">{editCred?'Edit Credential':'Add Credential'}</div>
+            <button className="mclose" onClick={()=>setShowModal(false)}>×</button>
+          </div>
+          <div className="mbody">
+            {!editCred&&<>
+              <div style={{marginBottom:12}}>
+                <div className="prop-grp-lbl" style={{marginBottom:8}}>Service Type</div>
+                <div className="svc-grid">
+                  {SVCS.map(s=>(
+                    <div key={s.type} className={`svc-opt ${selType===s.type?'svc-sel':''}`} onClick={()=>setSelType(s.type)}>
+                      <div className="svc-ico">{s.icon}</div>{s.lbl}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>}
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <div className="prop-field">
+                <div className="prop-lbl">Credential Name (reference key)</div>
+                <input className="inp" placeholder="e.g. PROD_AIRFLOW" value={formName} onChange={e=>setFormName(e.target.value.toUpperCase())} style={{textTransform:'uppercase'}}/>
+              </div>
+              {currSvc.fields.map(field=>(
+                <div key={field} className="prop-field">
+                  <div className="prop-lbl">{field.replace(/_/g,' ')}</div>
+                  <input className="inp"
+                    type={field.includes('password')||field.includes('secret')||field.includes('key')?'password':'text'}
+                    placeholder={`Enter ${field.replace(/_/g,' ')}…`}
+                    onChange={e=>setFormFields(f=>({...f,[field]:e.target.value}))}/>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mfoot">
+            <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>🔐 {saving?'Saving…':'Save Encrypted'}</button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>;
+}
+
+/* ── Variables Page ── */
+function VariablesPage({api,addToast,workflows}){
+  const [vars,setVars]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [showModal,setShowModal]=useState(false);
+  const [editVar,setEditVar]=useState(null);
+  const [form,setForm]=useState({key:'',value:'',scope:'workflow',workflow_id:'',value_type:'string',description:''});
+  const [filter,setFilter]=useState('');
+
+  const load=async()=>{
+    setLoading(true);
+    try{const d=await api('/variables/');setVars(d.variables||[]);}
+    catch(e){addToast('error',`Load failed: ${e.message}`);}
+    finally{setLoading(false);}
+  };
+  useEffect(()=>{load();},[]);
+
+  const openAdd=()=>{setEditVar(null);setForm({key:'',value:'',scope:'workflow',workflow_id:'',value_type:'auto',description:''});setShowModal(true);};
+  const openEdit=(v)=>{setEditVar(v);setForm({key:v.key,value:typeof v.value==='object'?JSON.stringify(v.value,null,2):String(v.value??''),scope:v.scope,workflow_id:v.workflow_id||'',value_type:v.value_type||'string',description:v.description||''});setShowModal(true);};
+
+  const save=async()=>{
+    try{
+      const payload={...form,value:form.value};
+      if(editVar){
+        await api(`/variables/${editVar.id}`,{method:'PUT',body:JSON.stringify({value:form.value,description:form.description,value_type:form.value_type})});
+        addToast('success','Variable updated');
+      } else {
+        await api('/variables/',{method:'POST',body:JSON.stringify(payload)});
+        addToast('success','Variable created');
+      }
+      setShowModal(false);load();
+    }catch(e){addToast('error',e.message);}
+  };
+
+  const del=async(id)=>{
+    if(!confirm('Delete this variable?')) return;
+    try{await api(`/variables/${id}`,{method:'DELETE'});addToast('info','Deleted');load();}
+    catch(e){addToast('error',e.message);}
+  };
+
+  const filtered=vars.filter(v=>v.key.toLowerCase().includes(filter.toLowerCase())||(String(v.value||'')).includes(filter));
+  const grouped={workflow:filtered.filter(v=>v.scope==='workflow'),global:filtered.filter(v=>v.scope==='global')};
+
+  if(loading) return <div className="loading">⏳ Loading variables…</div>;
+
+  const typeColor={string:'var(--t2)',number:'var(--accent)',boolean:'var(--green)',json:'var(--purple)',auto:'var(--t3)'};
+
+  return <div className="page-content">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+      <div>
+        <h2 style={{fontSize:18,fontWeight:800}}>Workflow Variables</h2>
+        <p style={{fontSize:13,color:'var(--t3)',marginTop:3}}>Persistent key-value store. Reference with <span className="mono" style={{color:'var(--accent)'}}>{'{{$var.key}}'}</span> in node props.</p>
+      </div>
+      <button className="btn btn-primary" onClick={openAdd}>+ New Variable</button>
+    </div>
+    <div style={{marginBottom:14}}>
+      <input className="filter-inp" placeholder="🔍 Filter variables…" value={filter} onChange={e=>setFilter(e.target.value)} style={{maxWidth:320}}/>
+    </div>
+    {['workflow','global'].map(scope=>(
+      <div key={scope} style={{marginBottom:20}}>
+        <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'1.2px',color:'var(--t3)',fontFamily:'var(--mono)',marginBottom:8}}>{scope} scope ({grouped[scope].length})</div>
+        {grouped[scope].length===0
+          ? <div style={{padding:'12px 16px',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,color:'var(--t3)',fontSize:13}}>No {scope} variables.</div>
+          : <div className="tbl-card">
+              <table>
+                <thead><tr><th>Key</th><th>Value</th><th>Type</th><th>Workflow</th><th>Updated</th><th></th></tr></thead>
+                <tbody>
+                  {grouped[scope].map(v=>(
+                    <tr key={v.id}>
+                      <td><span className="mono" style={{color:'var(--accent)'}}>${v.key}</span></td>
+                      <td><span className="mono" style={{color:'var(--t1)',maxWidth:240,display:'inline-block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{typeof v.value==='object'?JSON.stringify(v.value):String(v.value??'')}</span></td>
+                      <td><span style={{fontSize:11,color:typeColor[v.value_type]||'var(--t2)',fontFamily:'var(--mono)'}}>{v.value_type}</span></td>
+                      <td><span style={{fontSize:11,color:'var(--t3)'}}>{scope==='workflow'?(workflows.find(w=>w.id===v.workflow_id)?.name||v.workflow_id||'—'):'global'}</span></td>
+                      <td><span className="mono" style={{fontSize:11,color:'var(--t3)'}}>{new Date(v.updated_at).toLocaleDateString()}</span></td>
+                      <td><div style={{display:'flex',gap:5}}>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(v)}>✏️</button>
+                        <button className="btn btn-danger btn-sm" onClick={()=>del(v.id)}>✕</button>
+                      </div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+        }
+      </div>
+    ))}
+    {showModal&&(
+      <div className="overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+        <div className="modal modal-sm">
+          <div className="mhdr">
+            <div className="mtitle">{editVar?`Edit $${editVar.key}`:'New Variable'}</div>
+            <button className="mclose" onClick={()=>setShowModal(false)}>×</button>
+          </div>
+          <div className="mbody">
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {!editVar&&<>
+                <div className="prop-field">
+                  <div className="prop-lbl">Key</div>
+                  <input className="inp" placeholder="my_variable" value={form.key} onChange={e=>setForm(f=>({...f,key:e.target.value}))}/>
+                  <div className="hint">Reference as {'{{$var.my_variable}}'} in node props</div>
+                </div>
+                <div className="prop-field">
+                  <div className="prop-lbl">Scope</div>
+                  <select className="sel" value={form.scope} onChange={e=>setForm(f=>({...f,scope:e.target.value}))}>
+                    <option value="workflow">Workflow (scoped to one workflow)</option>
+                    <option value="global">Global (all workflows)</option>
+                  </select>
+                </div>
+                {form.scope==='workflow'&&<div className="prop-field">
+                  <div className="prop-lbl">Workflow</div>
+                  <select className="sel" value={form.workflow_id} onChange={e=>setForm(f=>({...f,workflow_id:e.target.value}))}>
+                    <option value="">— Select workflow —</option>
+                    {workflows.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>}
+              </>}
+              <div className="prop-field">
+                <div className="prop-lbl">Value</div>
+                <textarea className="ta" placeholder='e.g. 42  or  "hello"  or  {"key": "val"}' value={form.value} onChange={e=>setForm(f=>({...f,value:e.target.value}))}/>
+              </div>
+              <div className="prop-field">
+                <div className="prop-lbl">Type</div>
+                <select className="sel" value={form.value_type} onChange={e=>setForm(f=>({...f,value_type:e.target.value}))}>
+                  {['auto','string','number','boolean','json'].map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="prop-field">
+                <div className="prop-lbl">Description (optional)</div>
+                <input className="inp" placeholder="What this variable is for…" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/>
+              </div>
+            </div>
+          </div>
+          <div className="mfoot">
+            <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={save}>Save Variable</button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>;
+}
+
+/* ── Workflow Settings Modal ── */
+function WorkflowSettingsModal({wf,api,addToast,onClose,onSave,workflows}){
+  const [errorWfId,setErrorWfId]=useState((wf.settings||{}).error_workflow_id||'');
+  const [tz,setTz]=useState((wf.settings||{}).timezone||'UTC');
+  const [saving,setSaving]=useState(false);
+
+  const save=async()=>{
+    setSaving(true);
+    try{
+      await api(`/workflows/${wf.id}`,{method:'PUT',body:JSON.stringify({
+        settings:{...wf.settings,error_workflow_id:errorWfId||null,timezone:tz},
+      })});
+      addToast('success','Workflow settings saved');
+      onSave({...wf,settings:{...wf.settings,error_workflow_id:errorWfId||null,timezone:tz}});
+      onClose();
+    }catch(e){addToast('error',e.message);}
+    finally{setSaving(false);}
+  };
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal modal-sm">
+      <div className="mhdr">
+        <div className="mtitle">⚙️ Workflow Settings</div>
+        <button className="mclose" onClick={onClose}>×</button>
+      </div>
+      <div className="mbody">
+        <div className="prop-grp">
+          <div className="prop-grp-lbl">Error Handling</div>
+          <div className="prop-field">
+            <div className="prop-lbl">Error Workflow</div>
+            <select className="sel" value={errorWfId} onChange={e=>setErrorWfId(e.target.value)}>
+              <option value="">— None (fail silently) —</option>
+              {workflows.filter(w=>w.id!==wf.id).map(w=><option key={w.id} value={w.id}>{w.name}</option>)}
+            </select>
+            <div className="hint">When this workflow fails, automatically trigger the selected error-handler workflow with failure context as trigger_data.</div>
+          </div>
+        </div>
+        <div className="prop-grp">
+          <div className="prop-grp-lbl">Scheduling</div>
+          <div className="prop-field">
+            <div className="prop-lbl">Timezone</div>
+            <input className="inp" value={tz} onChange={e=>setTz(e.target.value)} placeholder="UTC"/>
+          </div>
+        </div>
+        {errorWfId&&<div style={{background:'rgba(0,214,143,.07)',border:'1px solid rgba(0,214,143,.2)',borderRadius:7,padding:'9px 13px',fontSize:12,color:'var(--green)',marginTop:4}}>
+          ✅ On failure, FlowForge will fire <strong>{workflows.find(w=>w.id===errorWfId)?.name}</strong> with error context as trigger payload.
+        </div>}
+      </div>
+      <div className="mfoot">
+        <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving?'Saving…':'Save Settings'}</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── App Shell ── */
+function App(){
+  const [token,setToken]=useState(null);
+  const [user,setUser]=useState(null);
+  const [page,setPage]=useState('chat');
+  const [currentWf,setCurrentWf]=useState(null);
+  const [workflows,setWorkflows]=useState([]);
+  const [toasts,setToasts]=useState([]);
+
+  const addToast=useCallback((type,msg)=>{
+    const id=Date.now();
+    setToasts(t=>[...t,{id,type,msg}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4000);
+  },[]);
+
+  const api=token?makeApi(token):null;
+
+  const onLogin=(tok,usr)=>{setToken(tok);setUser(usr);};
+
+  const loadWorkflows=useCallback(async()=>{
+    if(!api) return;
+    try{const d=await api('/workflows');setWorkflows(d.workflows||[]);}
+    catch(e){/* silent */}
+  },[token]);
+
+  useEffect(()=>{if(token) loadWorkflows();},[token]);
+
+  const openWorkflow=(wf)=>{setCurrentWf(wf);setPage('workflow');};
+
+  if(!token) return <LoginPage onLogin={onLogin}/>;
+
+  const navItems=[
+    {id:'chat',icon:'💬',label:'AI Chat'},
+    {id:'workflow',icon:'⬡',label:'Workflow Editor'},
+    {id:'history',icon:'📋',label:'Execution History'},
+    {id:'variables',icon:'📌',label:'Variables'},
+    {id:'credentials',icon:'🔐',label:'Credentials'},
+  ];
+
+  const topTitles={
+    chat:'💬 AI Prompt → Workflow Generator',
+    workflow:`⬡ ${currentWf?.name||'Workflow Editor'}`,
+    history:'📋 Execution History',
+    variables:'📌 Workflow Variables',
+    credentials:'🔐 Credential Vault',
+  };
+
+  const initials=(user?.email||'U').slice(0,2).toUpperCase();
+
+  return <>
+    <div className="accent-line"/>
+    <div className="shell">
+      <div className="sidebar">
+        <div className="logo-wrap">
+          <div className="logo-mark">FF</div>
+          <div>
+            <div className="logo-text">FlowForge</div>
+            <div style={{fontSize:9,color:'var(--t3)',fontFamily:'var(--mono)'}}>v3.0 production</div>
+          </div>
+        </div>
+        <div className="nav">
+          <div className="nav-sec">Application</div>
+          {navItems.map(n=>(
+            <div key={n.id} className={`nav-item ${page===n.id?'active':''}`} onClick={()=>setPage(n.id)}>
+              <span className="nav-icon">{n.icon}</span><span>{n.label}</span>
+            </div>
+          ))}
+          {workflows.length>0&&<>
+            <div className="nav-sec" style={{marginTop:8}}>Saved Workflows</div>
+            {workflows.map(w=>(
+              <div key={w.id} className="nav-item" onClick={()=>openWorkflow(w)} style={{paddingLeft:14}}>
+                <span className="nav-icon" style={{fontSize:11}}>⬡</span>
+                <span style={{fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{w.name}</span>
+              </div>
+            ))}
+          </>}
+        </div>
+        <div className="sidebar-bot">
+          <div className="user-chip" onClick={()=>{if(confirm('Sign out?')){setToken(null);setUser(null);setWorkflows([]);}}}>
+            <div className="user-av">{initials}</div>
+            <div>
+              <div className="user-name">{user?.email?.split('@')[0]||'User'}</div>
+              <div className="user-role">click to logout</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="main">
+        <div className="topbar">
+          <span className="topbar-title">{topTitles[page]}</span>
+          <div style={{display:'flex',gap:8}}>
+            {page==='workflow'&&<>
+              <button className="btn btn-success btn-sm" onClick={()=>addToast('info','Use toolbar to save')}>💾 Save</button>
+              <button className="btn btn-primary btn-sm" onClick={()=>addToast('info','Use toolbar to execute')}>▶ Execute</button>
+            </>}
+            {page==='history'&&<button className="btn btn-ghost btn-sm" onClick={()=>setPage('history')}>🔄 Refresh</button>}
+            <button className="btn btn-ghost btn-sm" onClick={()=>window.open('/api/health','_blank')}>⚙️ Health</button>
+          </div>
+        </div>
+        <div className="page">
+          {page==='chat'    &&<ChatPage api={api} addToast={addToast} onOpenWorkflow={openWorkflow}/>}
+          {page==='workflow'&&<WorkflowPage api={api} initialWorkflow={currentWf} addToast={addToast} token={token} workflows={workflows}/>}
+          {page==='history' &&<HistoryPage api={api} addToast={addToast}/>}
+          {page==='variables'&&<VariablesPage api={api} addToast={addToast} workflows={workflows}/>}
+          {page==='credentials'&&<CredentialsPage api={api} addToast={addToast}/>}
+        </div>
+      </div>
+    </div>
+    <Toast toasts={toasts}/>
+  </>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

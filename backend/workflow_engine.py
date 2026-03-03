@@ -126,6 +126,12 @@ def topo_sort(nodes, edges):
         for nb in adj[n]:
             indeg[nb] -= 1
             if indeg[nb] == 0: q.append(nb)
+    if len(res) < len(ids):
+        cycle_nodes = ids - set(res)
+        raise ValueError(
+            f"Workflow contains a cycle — nodes {cycle_nodes} form a loop and cannot execute. "
+            f"Remove the circular edges in the editor."
+        )
     return res
 
 
@@ -481,8 +487,8 @@ async def handle_if(node, creds, owner_id, ctx, nlog, **kw):
     nlog.info(f"IF: [{left}] {op} [{right}]")
     result = False
     try:
-        if   op == "equals":       result = left == right
-        elif op == "not_equals":   result = left != right
+        if   op == "equals":       result = left.lower() == right.lower()
+        elif op == "not_equals":   result = left.lower() != right.lower()
         elif op == "contains":     result = right in left
         elif op == "greater_than": result = float(left or 0) > float(right or 0)
         elif op == "less_than":    result = float(left or 0) < float(right or 0)
@@ -748,22 +754,48 @@ async def handle_airflow(node, creds, owner_id, ctx, nlog, **kw):
     validate_logs          = props.get("validate_logs") or {}
     assert_log_contains    = props.get("assert_log_contains", "")
     assert_no_failed_tasks = props.get("assert_no_failed_tasks", True)
+    # validate_task_patterns: list of name prefixes — all matching tasks must succeed
+    # e.g. ["QA"] → all tasks starting with "QA" must be success/skipped
 
     if not dag_id: raise ValueError("Airflow node missing dag_id")
     if not cred:   raise ValueError("Airflow node missing credential")
 
+    # Read wait behaviour from node props (set by DSL generator)
+    wait_for_completion = bool(props.get("wait_for_completion", True))
+    wait_if_running     = bool(props.get("wait_if_running", False))
+
     nlog.section(f"Airflow DAG: {dag_id}")
-    nlog.info(f"Credential: {cred}  Timeout: {timeout}s")
+    nlog.info(f"Credential: {cred}  Timeout: {timeout}s  wait={wait_for_completion}  preflight={wait_if_running}")
     connector = creds.build_connector(cred, owner_id)
 
-    dag_run_id  = await _t(connector.trigger_dag, dag_id, conf=conf)
+    # Pre-flight: if dag is already running, wait for it before triggering a new run
+    if wait_if_running:
+        nlog.info(f"Pre-flight: checking for active runs of {dag_id!r}…")
+        try:
+            waited = await _t(connector.wait_if_running, dag_id, timeout=timeout)
+            if waited:
+                nlog.ok(f"Pre-flight: {len(waited)} prior run(s) finished, now triggering")
+            else:
+                nlog.info("Pre-flight: DAG is idle, triggering immediately")
+        except Exception as pf_err:
+            nlog.warn(f"Pre-flight check failed (continuing anyway): {pf_err}")
+
+    # trigger_dag returns a dict {dag_run_id, dag_id, state, ...} — extract the run ID
+    run_data   = await _t(connector.trigger_dag, dag_id, conf=conf)
+    dag_run_id = run_data.get("dag_run_id") if isinstance(run_data, dict) else str(run_data)
     nlog.ok(f"Run created: {dag_run_id}")
 
-    nlog.section("Polling for completion")
     t0          = time.time()
-    final_state = await _t(connector.wait_for_completion, dag_id, dag_run_id, timeout=timeout)
-    elapsed     = round(time.time() - t0, 1)
-    nlog.info(f"Final state: {final_state}  ({elapsed}s)")
+    final_state = run_data.get("state", "queued") if isinstance(run_data, dict) else "queued"
+    elapsed     = 0.0
+
+    if wait_for_completion:
+        nlog.section("Polling for completion")
+        final_state = await _t(connector.wait_for_completion, dag_id, dag_run_id, timeout=timeout)
+        elapsed     = round(time.time() - t0, 1)
+        nlog.info(f"Final state: {final_state}  ({elapsed}s)")
+    else:
+        nlog.info(f"Not waiting for completion (wait_for_completion=False) — state: {final_state}")
 
     nlog.section("Task Instances")
     task_instances = await _t(connector.get_task_instances, dag_id, dag_run_id)
@@ -824,6 +856,50 @@ async def handle_airflow(node, creds, owner_id, ctx, nlog, **kw):
             nlog.error(f"FAIL: no task log contains {assert_log_contains!r}")
             raise AssertionError(f"No task log contained: {assert_log_contains!r}")
 
+    # ── Task Pattern Validation ───────────────────────────────────────────────
+    # validate_task_pattern: check all tasks whose names start with / match a prefix
+    # e.g. "QA" → all tasks named QA_check, QA_validate, QA_* must have state=success
+    # Outputs: {prefix}_tasks_all_passed (bool), {prefix}_tasks (list), {prefix}_failed_tasks
+    pattern_results = {}
+    validate_task_patterns = props.get("validate_task_patterns") or []
+    if isinstance(validate_task_patterns, str):
+        validate_task_patterns = [validate_task_patterns]
+
+    if validate_task_patterns:
+        nlog.section("Task Pattern Validation")
+        for pattern in validate_task_patterns:
+            pat_upper = pattern.upper()
+            # Match tasks whose id starts with the pattern (case-insensitive)
+            matched = {tid: info for tid, info in task_summary.items()
+                       if tid.upper().startswith(pat_upper)}
+            nlog.info(f"Pattern {pattern!r}: matched {len(matched)} task(s): {list(matched.keys())}")
+
+            if not matched:
+                nlog.warn(f"No tasks found matching prefix {pattern!r} — treating as passed")
+                key = pattern.lower().replace(" ", "_")
+                pattern_results[f"{key}_tasks_all_passed"] = True
+                pattern_results[f"{key}_tasks"] = []
+                pattern_results[f"{key}_failed_tasks"] = []
+                continue
+
+            failed = [tid for tid, info in matched.items()
+                      if info["state"] not in ("success", "skipped")]
+            all_passed = len(failed) == 0
+
+            key = pattern.lower().replace(" ", "_").rstrip("_")
+            pattern_results[f"{key}_tasks_all_passed"] = all_passed
+            pattern_results[f"{key}_tasks"]            = list(matched.keys())
+            pattern_results[f"{key}_failed_tasks"]     = failed
+
+            if all_passed:
+                nlog.ok(f"PASS: all {len(matched)} task(s) matching {pattern!r} succeeded")
+            else:
+                nlog.error(f"FAIL: {len(failed)} task(s) matching {pattern!r} did not succeed: {failed}")
+                if props.get("assert_task_pattern_success", False):
+                    raise AssertionError(
+                        f"Tasks matching {pattern!r} failed: {failed}"
+                    )
+
     if final_state != "success":
         raise RuntimeError(f"DAG {dag_id!r} ended with state={final_state!r}")
 
@@ -836,6 +912,7 @@ async def handle_airflow(node, creds, owner_id, ctx, nlog, **kw):
         "task_count":      len(task_instances),
         "task_summary":    task_summary,
         "task_logs":       {tid: log[:3000] for tid, log in all_task_logs.items()},
+        **pattern_results,   # qa_tasks_all_passed, qa_tasks, qa_failed_tasks, etc.
     }
 
 
@@ -919,6 +996,41 @@ async def handle_sql(node, creds, owner_id, ctx, nlog, **kw):
         else:
             nlog.error(f"FAIL: scalar expected {assert_scalar!r}, got {actual!r}")
             raise AssertionError(f"Scalar: expected {assert_scalar!r}, got {actual!r}")
+
+    # Row-count level: assert_greater_than / assert_less_than / assert_equals
+    # These are set by the DSL generator for prompts like "more than 300 entries"
+    # (column-level versions of these are handled separately in _extract_one below)
+    _agt = props.get("assert_greater_than")
+    _alt = props.get("assert_less_than")
+    _aeq = props.get("assert_equals")
+    _extract_col = props.get("extract_column")  # if set, assertions apply to column value, not row count
+
+    if _agt is not None and not _extract_col:
+        try:
+            thr = float(_agt)
+            if len(rows) > thr: nlog.ok(f"PASS: row count {len(rows)} > {thr}")
+            else:
+                nlog.error(f"FAIL: row count {len(rows)} NOT > {thr}")
+                raise AssertionError(f"assert_greater_than: row count {len(rows)} is not > {thr}")
+        except (TypeError, ValueError): pass
+
+    if _alt is not None and not _extract_col:
+        try:
+            thr = float(_alt)
+            if len(rows) < thr: nlog.ok(f"PASS: row count {len(rows)} < {thr}")
+            else:
+                nlog.error(f"FAIL: row count {len(rows)} NOT < {thr}")
+                raise AssertionError(f"assert_less_than: row count {len(rows)} is not < {thr}")
+        except (TypeError, ValueError): pass
+
+    if _aeq is not None and not _extract_col:
+        try:
+            exp = int(_aeq)
+            if len(rows) == exp: nlog.ok(f"PASS: row count {len(rows)} == {exp}")
+            else:
+                nlog.error(f"FAIL: row count {len(rows)} != {exp}")
+                raise AssertionError(f"assert_equals: row count {len(rows)} != {exp}")
+        except (TypeError, ValueError): pass
 
     if output_path: nlog.ok(f"Exported {len(rows)} rows → {output_path}")
     nlog.ok("All SQL assertions passed ✓")

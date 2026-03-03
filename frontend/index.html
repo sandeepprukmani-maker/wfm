@@ -12,222 +12,259 @@
 <!-- Fonts: system stack only — no external requests -->
 <style>
 :root{
-  --void:#050709;--deep:#080c12;--surface:#0e1420;--raised:#131b28;--hover:#19203a;
-  --border:#1e2d42;--border-hi:#2a3f5c;
-  --t1:#e2eaf5;--t2:#7a92b0;--t3:#3d5470;
-  --accent:#00e5ff;--adim:rgba(0,229,255,.12);--aglow:rgba(0,229,255,.06);
-  --green:#00d68f;--gdim:rgba(0,214,143,.1);
-  --red:#ff4d6a;--rdim:rgba(255,77,106,.1);
-  --yellow:#ffb020;--ydim:rgba(255,176,32,.1);
-  --purple:#b66dff;--orange:#ff7d3d;
-  --surface2:#111827;
-  --mono:'IBM Plex Mono','Cascadia Code','Fira Code','JetBrains Mono',ui-monospace,monospace;--sans:'Syne','DM Sans','Inter','Segoe UI',system-ui,sans-serif;
+  /* Base surfaces */
+  --void:#f5f5f4;--deep:#ffffff;--surface:#ffffff;--raised:#f9fafb;--hover:#f3f4f6;
+  --border:#e5e7eb;--border-hi:#d1d5db;
+  /* Text */
+  --t1:#111827;--t2:#6b7280;--t3:#9ca3af;
+  /* Brand */
+  --accent:#1d4ed8;--adim:rgba(29,78,216,.08);--aglow:rgba(29,78,216,.04);
+  /* Status */
+  --green:#15803d;--gdim:rgba(21,128,61,.08);
+  --red:#b91c1c;--rdim:rgba(185,28,28,.08);
+  --yellow:#b45309;--ydim:rgba(180,83,9,.08);
+  --purple:#6d28d9;--orange:#c2410c;
+  --surface2:#f3f4f6;
+  /* Typography */
+  --mono:'IBM Plex Mono','Cascadia Code','Fira Code','JetBrains Mono',ui-monospace,monospace;
+  --sans:-apple-system,'Helvetica Neue',Arial,'Segoe UI',sans-serif;
+  /* Shadows */
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.05),0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.05),0 4px 6px rgba(0,0,0,.05);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body,#root{height:100%;overflow:hidden}
-body{font-family:var(--sans);background:var(--void);color:var(--t1);display:flex;flex-direction:column}
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:2px}
+body{font-family:var(--sans);background:var(--void);color:var(--t1);display:flex;flex-direction:column;font-size:14px;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--raised)}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--t3)}
+
+/* ── Shell ── */
 .shell{display:flex;height:100vh;overflow:hidden}
-.sidebar{width:210px;min-width:210px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;flex-shrink:0}
-.logo-wrap{padding:16px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),#0055ff);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#000;font-family:var(--mono);flex-shrink:0}
-.logo-text{font-size:15px;font-weight:800;color:var(--accent)}
-.nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
-.nav-sec{font-size:9px;text-transform:uppercase;letter-spacing:1.4px;color:var(--t3);padding:10px 12px 4px;font-family:var(--mono)}
-.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;border-radius:7px;cursor:pointer;color:var(--t3);font-size:13px;font-weight:500;transition:all .15s;border:1px solid transparent}
-.nav-item:hover{background:var(--raised);color:var(--t2)}
-.nav-item.active{background:var(--adim);color:var(--accent);border-color:rgba(0,229,255,.2)}
-.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
-.sidebar-bot{padding:12px;border-top:1px solid var(--border)}
-.user-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;background:var(--raised);border-radius:8px;cursor:pointer}
-.user-av{width:28px;height:28px;background:linear-gradient(135deg,var(--purple),var(--accent));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.user-name{font-size:13px;font-weight:600}
-.user-role{font-size:10px;color:var(--t3);font-family:var(--mono)}
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.topbar{height:48px;background:var(--deep);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0}
-.topbar-title{font-size:14px;font-weight:700;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Sidebar ── */
+.sidebar{width:220px;min-width:220px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;flex-shrink:0}
+.logo-wrap{padding:0 16px;height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-mark{width:28px;height:28px;background:var(--accent);border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff;font-family:var(--mono);flex-shrink:0;letter-spacing:-.5px}
+.logo-text{font-size:14px;font-weight:600;color:var(--t1);letter-spacing:-.2px}
+.nav{flex:1;padding:8px 8px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.nav-sec{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);padding:12px 10px 4px;font-weight:500}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:5px;cursor:pointer;color:var(--t2);font-size:13px;font-weight:400;transition:background .1s,color .1s}
+.nav-item:hover{background:var(--hover);color:var(--t1)}
+.nav-item.active{background:var(--adim);color:var(--accent);font-weight:500}
+.nav-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+.sidebar-bot{padding:10px;border-top:1px solid var(--border)}
+.user-chip{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:5px;cursor:pointer;transition:background .1s}
+.user-chip:hover{background:var(--hover)}
+.user-av{width:26px;height:26px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;color:#fff}
+.user-name{font-size:12.5px;font-weight:500;color:var(--t1)}
+.user-role{font-size:10.5px;color:var(--t3)}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;background:var(--void)}
+.topbar{height:52px;background:var(--deep);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.topbar-title{font-size:13.5px;font-weight:500;color:var(--t1);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .page{flex:1;overflow:hidden;display:flex}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s;white-space:nowrap}
-.btn-primary{background:var(--accent);color:#000}.btn-primary:hover{background:#00cce8}
-.btn-secondary{background:var(--raised);color:var(--t1);border:1px solid var(--border-hi)}.btn-secondary:hover{background:var(--hover)}
-.btn-ghost{background:transparent;color:var(--t2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--raised);color:var(--t1)}
-.btn-danger{background:var(--rdim);color:var(--red);border:1px solid rgba(255,77,106,.25)}.btn-danger:hover{background:rgba(255,77,106,.2)}
-.btn-success{background:var(--gdim);color:var(--green);border:1px solid rgba(0,214,143,.25)}.btn-success:hover{background:rgba(0,214,143,.2)}
+.accent-line{display:none}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:5px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:var(--sans);transition:all .1s;white-space:nowrap;line-height:1}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{background:#1e40af;border-color:#1e40af}
+.btn-secondary{background:var(--deep);color:var(--t1);border-color:var(--border)}.btn-secondary:hover{background:var(--raised);border-color:var(--border-hi)}
+.btn-ghost{background:transparent;color:var(--t2);border-color:var(--border)}.btn-ghost:hover{background:var(--raised);color:var(--t1)}
+.btn-danger{background:var(--deep);color:var(--red);border-color:var(--border)}.btn-danger:hover{background:var(--rdim);border-color:rgba(185,28,28,.3)}
+.btn-success{background:var(--deep);color:var(--green);border-color:var(--border)}.btn-success:hover{background:var(--gdim)}
 .btn-sm{padding:4px 9px;font-size:11.5px}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono)}
-.badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;font-size:11px;font-weight:500;font-family:var(--mono)}
 .badge-success{background:var(--gdim);color:var(--green)}
 .badge-failed{background:var(--rdim);color:var(--red)}
 .badge-running{background:var(--ydim);color:var(--yellow)}
-.badge-pending,.badge-cancelled{background:rgba(61,84,112,.2);color:var(--t3)}
-.tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-family:var(--mono);background:var(--raised);color:var(--t3);border:1px solid var(--border)}
-.inp{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--t1);font-size:12.5px;font-family:var(--mono);outline:none;transition:border .15s}
-.inp:focus{border-color:var(--accent)}
+.badge-pending,.badge-cancelled{background:var(--raised);color:var(--t3);border:1px solid var(--border)}
+.tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:11px;font-family:var(--mono);background:var(--raised);color:var(--t2);border:1px solid var(--border)}
+
+/* ── Form elements ── */
+.inp{width:100%;background:var(--deep);border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none;transition:border .1s;box-shadow:var(--shadow-sm)}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
 .inp::placeholder{color:var(--t3)}
-.sel{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--t1);font-size:12.5px;font-family:var(--mono);outline:none;cursor:pointer}
-.ta{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--t1);font-size:12px;font-family:var(--mono);outline:none;resize:vertical;min-height:64px;transition:border .15s}
-.ta:focus{border-color:var(--accent)}
-.prop-grp{margin-bottom:16px}
-.prop-grp-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:8px;font-family:var(--mono)}
-.prop-field{margin-bottom:9px}
-.prop-lbl{font-size:11.5px;color:var(--t2);margin-bottom:3px}
-.hint{font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono)}
-.toast-wrap{position:fixed;bottom:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:6px}
-.toast{background:var(--surface);border:1px solid var(--border-hi);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:9px;min-width:240px;max-width:360px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:tIn .25s ease;font-size:13px}
-.toast-success{border-color:rgba(0,214,143,.35)}
-.toast-error{border-color:rgba(255,77,106,.35)}
-.toast-info{border-color:rgba(0,229,255,.25)}
-@keyframes tIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
-.modal{background:var(--deep);border:1px solid var(--border-hi);border-radius:14px;width:700px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.6);animation:mIn .2s ease}
+.sel{width:100%;background:var(--deep);border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none;cursor:pointer;box-shadow:var(--shadow-sm)}
+.sel:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+.ta{width:100%;background:var(--deep);border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:var(--t1);font-size:12.5px;font-family:var(--mono);outline:none;resize:vertical;min-height:64px;transition:border .1s;box-shadow:var(--shadow-sm)}
+.ta:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+
+/* ── Property panel ── */
+.prop-grp{margin-bottom:18px}
+.prop-grp-lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--t3);margin-bottom:8px;font-weight:500;border-bottom:1px solid var(--border);padding-bottom:5px}
+.prop-field{margin-bottom:10px}
+.prop-lbl{font-size:12px;color:var(--t1);margin-bottom:4px;font-weight:500}
+.hint{font-size:11px;color:var(--t3);margin-top:3px}
+
+/* ── Toasts ── */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--deep);border:1px solid var(--border);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:9px;min-width:260px;max-width:380px;box-shadow:var(--shadow-lg);animation:tIn .2s ease;font-size:13px;color:var(--t1)}
+.toast-success{border-left:3px solid var(--green)}
+.toast-error{border-left:3px solid var(--red)}
+.toast-info{border-left:3px solid var(--accent)}
+@keyframes tIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Modals ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--deep);border:1px solid var(--border);border-radius:8px;width:700px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:mIn .15s ease}
 .modal-sm{width:480px}
-@keyframes mIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-.mtitle{font-size:15px;font-weight:700}
-.mclose{width:28px;height:28px;background:var(--raised);border:none;border-radius:5px;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;font-size:17px}
-.mclose:hover{background:var(--rdim);color:var(--red)}
-.mbody{flex:1;overflow-y:auto;padding:18px 20px}
-.mfoot{padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0}
-.accent-line{height:2px;background:linear-gradient(90deg,transparent,var(--accent),var(--purple),var(--green),transparent);background-size:200% 100%;animation:gm 3s linear infinite;position:fixed;top:0;left:0;right:0;z-index:9999}
-@keyframes gm{0%{background-position:0}100%{background-position:200%}}
-/* Login */
+@keyframes mIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.mhdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mtitle{font-size:14px;font-weight:600;color:var(--t1)}
+.mclose{width:26px;height:26px;background:transparent;border:1px solid var(--border);border-radius:4px;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .1s}
+.mclose:hover{background:var(--rdim);border-color:rgba(185,28,28,.3);color:var(--red)}
+.mbody{flex:1;overflow-y:auto;padding:18px}
+.mfoot{padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;background:var(--raised)}
+
+/* ── Login ── */
 .login-wrap{position:fixed;inset:0;background:var(--void);display:flex;align-items:center;justify-content:center;z-index:2000}
-.login-card{background:var(--deep);border:1px solid var(--border-hi);border-radius:16px;padding:36px;width:400px;box-shadow:0 32px 80px rgba(0,0,0,.7)}
-.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
-.login-inp-wrap{margin-bottom:14px}
-.login-lbl{font-size:12px;color:var(--t2);margin-bottom:5px}
-.err-box{background:var(--rdim);border:1px solid rgba(255,77,106,.3);border-radius:7px;padding:9px 13px;font-size:12.5px;color:var(--red);margin-bottom:14px}
-/* Chat */
+.login-card{background:var(--deep);border:1px solid var(--border);border-radius:8px;padding:32px;width:380px;box-shadow:var(--shadow-lg)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.login-inp-wrap{margin-bottom:12px}
+.login-lbl{font-size:12px;color:var(--t1);margin-bottom:4px;font-weight:500}
+.err-box{background:var(--rdim);border:1px solid rgba(185,28,28,.25);border-radius:5px;padding:9px 12px;font-size:12.5px;color:var(--red);margin-bottom:12px}
+
+/* ── Chat ── */
 .chat-layout{display:flex;width:100%;overflow:hidden}
-.chat-hist-panel{width:230px;min-width:230px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column}
-.chp-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.chp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);font-family:var(--mono)}
+.chat-hist-panel{width:220px;min-width:220px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.chp-hdr{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--t3);font-weight:500}
 .chp-list{flex:1;overflow-y:auto;padding:6px}
-.chi{padding:9px 11px;border-radius:7px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;transition:all .15s}
+.chi{padding:8px 10px;border-radius:5px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;transition:all .1s}
 .chi:hover{background:var(--raised)}
-.chi.active{background:var(--adim);border-color:rgba(0,229,255,.2)}
-.chi-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chi-time{font-size:10px;color:var(--t3);margin-top:2px;font-family:var(--mono)}
-.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.chat-msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.chi.active{background:var(--adim);border-color:rgba(29,78,216,.15)}
+.chi-name{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t1)}
+.chi-time{font-size:10.5px;color:var(--t3);margin-top:2px}
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--void)}
+.chat-msgs{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px}
 .msg-row{display:flex;gap:10px;align-items:flex-start}
 .msg-row.user{flex-direction:row-reverse}
-.msg-av{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
-.msg-av.ai{background:linear-gradient(135deg,var(--accent),#0055ff);color:#000;font-family:var(--mono)}
-.msg-av.user{background:linear-gradient(135deg,var(--purple),#ff6b9d)}
-.msg-bubble{max-width:66%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.6}
-.msg-row.user .msg-bubble{background:var(--adim);border-color:rgba(0,229,255,.2)}
-.wf-card{background:var(--raised);border:1px solid var(--border-hi);border-radius:9px;padding:12px 14px;margin-top:10px}
-.wf-card-ttl{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--accent);font-family:var(--mono);margin-bottom:8px}
-.node-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin:2px;font-family:var(--mono)}
-.pa{background:rgba(255,125,61,.12);color:#ff7d3d}.ps{background:rgba(0,214,143,.1);color:#00d68f}
-.ph{background:rgba(182,109,255,.1);color:#b66dff}.p3{background:rgba(255,176,32,.1);color:#ffb020}
-.pz{background:rgba(0,229,255,.1);color:var(--accent)}.pf{background:rgba(74,222,170,.1);color:#4adeaa}
-.pw{background:rgba(122,146,176,.1);color:var(--t2)}.pif{background:rgba(255,176,32,.12);color:var(--yellow)}
-.pwh{background:rgba(255,77,106,.1);color:var(--red)}
-.td{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:tp 1.2s infinite;opacity:.5;display:inline-block}
+.msg-av{width:28px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;border:1px solid var(--border)}
+.msg-av.ai{background:var(--accent);color:#fff;border-color:var(--accent)}
+.msg-av.user{background:var(--deep);color:var(--t1)}
+.msg-bubble{max-width:66%;background:var(--deep);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:13.5px;line-height:1.6;color:var(--t1);box-shadow:var(--shadow-sm)}
+.msg-row.user .msg-bubble{background:var(--adim);border-color:rgba(29,78,216,.15)}
+.wf-card{background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-top:10px}
+.wf-card-ttl{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin-bottom:8px;font-weight:500}
+.node-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:3px;font-size:11px;font-weight:500;margin:2px;font-family:var(--mono);border:1px solid currentColor;opacity:.9}
+.pa{background:rgba(196,72,36,.07);color:#c44824}.ps{background:rgba(21,128,61,.07);color:var(--green)}
+.ph{background:rgba(109,40,217,.07);color:var(--purple)}.p3{background:rgba(180,83,9,.07);color:var(--yellow)}
+.pz{background:rgba(29,78,216,.07);color:var(--accent)}.pf{background:rgba(15,118,110,.07);color:#0f766e}
+.pw{background:rgba(107,114,128,.07);color:var(--t2)}.pif{background:rgba(180,83,9,.07);color:var(--yellow)}
+.pwh{background:rgba(185,28,28,.07);color:var(--red)}
+.td{width:5px;height:5px;background:var(--t3);border-radius:50%;animation:tp 1.2s infinite;display:inline-block}
 .td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
 @keyframes tp{0%,80%,100%{transform:scale(1);opacity:.5}40%{transform:scale(1.4);opacity:1}}
-.chat-inp-area{padding:14px 16px;background:var(--deep);border-top:1px solid var(--border)}
-.qpills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.qpill{padding:4px 10px;background:var(--raised);border:1px solid var(--border);border-radius:14px;font-size:11px;color:var(--t2);cursor:pointer;transition:all .15s;font-family:var(--mono)}
-.qpill:hover{border-color:var(--accent);color:var(--accent)}
-.inp-wrap{display:flex;gap:8px;align-items:flex-end;background:var(--surface);border:1px solid var(--border-hi);border-radius:10px;padding:9px 12px;transition:border .2s}
-.inp-wrap:focus-within{border-color:var(--accent)}
+.chat-inp-area{padding:12px 16px;background:var(--deep);border-top:1px solid var(--border)}
+.qpills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.qpill{padding:3px 9px;background:var(--raised);border:1px solid var(--border);border-radius:3px;font-size:11.5px;color:var(--t2);cursor:pointer;transition:all .1s}
+.qpill:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+.inp-wrap{display:flex;gap:8px;align-items:flex-end;background:var(--deep);border:1px solid var(--border);border-radius:6px;padding:8px 10px;transition:border .1s;box-shadow:var(--shadow-sm)}
+.inp-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
 .chat-inp{flex:1;background:transparent;border:none;outline:none;color:var(--t1);font-family:var(--sans);font-size:13.5px;resize:none;max-height:100px;line-height:1.5}
 .chat-inp::placeholder{color:var(--t3)}
-.send-btn{width:32px;height:32px;background:var(--accent);border:none;border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;color:#000;font-weight:700;font-size:14px}
-.send-btn:hover{background:#00cce8;transform:scale(1.05)}
-.send-btn:disabled{background:var(--border);cursor:not-allowed;transform:none;color:var(--t3)}
-/* Canvas */
+.send-btn{width:30px;height:30px;background:var(--accent);border:none;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:background .1s;color:#fff;font-weight:700;font-size:13px}
+.send-btn:hover{background:#1e40af}
+.send-btn:disabled{background:var(--border);cursor:not-allowed;color:var(--t3)}
+
+/* ── Workflow Canvas ── */
 .wf-layout{display:flex;width:100%;overflow:hidden}
 .canvas-area{flex:1;position:relative;overflow:hidden}
-.canvas{width:100%;height:100%;background-color:var(--void);background-image:radial-gradient(circle,rgba(30,45,66,.8) 1px,transparent 1px);background-size:24px 24px;position:relative;cursor:grab;overflow:hidden}
+.canvas{width:100%;height:100%;background-color:#f8f9fa;background-image:radial-gradient(circle,#d1d5db 1px,transparent 1px);background-size:20px 20px;position:relative;cursor:grab;overflow:hidden}
 .canvas:active{cursor:grabbing}
-.canvas-tb{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:5px;display:flex;gap:3px;z-index:20;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-.ctb{padding:5px 11px;border-radius:6px;background:transparent;border:none;color:var(--t2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:500;transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.canvas-tb{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--deep);border:1px solid var(--border);border-radius:6px;padding:4px;display:flex;gap:2px;z-index:20;box-shadow:var(--shadow-md)}
+.ctb{padding:5px 10px;border-radius:4px;background:transparent;border:none;color:var(--t2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:400;transition:all .1s;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .ctb:hover{background:var(--raised);color:var(--t1)}
 .ctb.active{background:var(--adim);color:var(--accent)}
-.ctb:disabled{opacity:.4;cursor:not-allowed}
-.ct-sep{width:1px;background:var(--border);margin:3px 2px}
-.zoom-badge{position:absolute;bottom:14px;left:14px;background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;font-family:var(--mono);color:var(--t2);z-index:20}
-.wf-node{position:absolute;width:185px;background:var(--surface);border:1.5px solid var(--border);border-radius:11px;cursor:pointer;transition:border-color .15s,box-shadow .15s;user-select:none;z-index:5}
-.wf-node:hover{border-color:var(--border-hi);box-shadow:0 4px 20px rgba(0,0,0,.3)}
-.wf-node.sel{box-shadow:0 0 0 2px var(--accent),0 4px 24px rgba(0,229,255,.15);border-color:var(--accent)}
-.node-hdr{padding:9px 11px 7px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border)}
-.node-ico{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
-.node-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
-.node-body{padding:7px 11px 9px}
+.ctb:disabled{opacity:.35;cursor:not-allowed}
+.ct-sep{width:1px;background:var(--border);margin:2px 3px}
+.zoom-badge{position:absolute;bottom:12px;left:12px;background:var(--deep);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:11px;font-family:var(--mono);color:var(--t2);z-index:20}
+.wf-node{position:absolute;width:180px;background:var(--deep);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:border-color .1s,box-shadow .1s;user-select:none;z-index:5;box-shadow:var(--shadow-sm)}
+.wf-node:hover{border-color:var(--border-hi);box-shadow:var(--shadow-md)}
+.wf-node.sel{box-shadow:0 0 0 2px var(--accent);border-color:var(--accent)}
+.node-hdr{padding:8px 10px 6px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border)}
+.node-ico{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.node-title{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;color:var(--t1)}
+.node-body{padding:6px 10px 8px}
 .node-prop{font-size:10.5px;color:var(--t2);margin-bottom:2px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .node-prop span{color:var(--t1)}
 .sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.sd-idle{background:var(--t3)}.sd-running{background:var(--yellow);animation:pulse 1s infinite}
-.sd-success{background:var(--green)}.sd-failed{background:var(--red)}.sd-skipped{background:var(--t3);opacity:.45}
+.sd-idle{background:var(--border-hi)}.sd-running{background:var(--yellow);animation:pulse 1s infinite}
+.sd-success{background:var(--green)}.sd-failed{background:var(--red)}.sd-skipped{background:var(--border-hi);opacity:.5}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.port{width:10px;height:10px;background:var(--deep);border:2px solid var(--border-hi);border-radius:50%;position:absolute;transition:all .15s;cursor:crosshair;z-index:6}
+.port{width:9px;height:9px;background:var(--deep);border:1.5px solid var(--border-hi);border-radius:50%;position:absolute;transition:all .1s;cursor:crosshair;z-index:6}
 .port:hover{background:var(--accent);border-color:var(--accent)}
-.port-out{right:-6px;top:50%;transform:translateY(-50%)}.port-in{left:-6px;top:50%;transform:translateY(-50%)}
+.port-out{right:-5px;top:50%;transform:translateY(-50%)}.port-in{left:-5px;top:50%;transform:translateY(-50%)}
 .edges-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
-.palette{position:absolute;left:14px;top:66px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px;z-index:20;width:158px;box-shadow:0 4px 20px rgba(0,0,0,.4)}
-.pal-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);padding:3px 7px 5px;font-family:var(--mono)}
-.pal-item{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--t2);transition:background .1s}
-.pal-item:hover{background:var(--raised);color:var(--t1)}
-.pal-ico{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px}
-.props-panel{width:290px;min-width:290px;background:var(--deep);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.pp-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.pp-title{font-size:12px;font-weight:700;font-family:var(--mono)}
+.palette{position:absolute;left:12px;top:60px;background:var(--deep);border:1px solid var(--border);border-radius:6px;padding:6px;z-index:20;width:152px;box-shadow:var(--shadow-md)}
+.pal-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--t3);padding:3px 7px 5px;font-weight:500}
+.pal-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:4px;cursor:pointer;font-size:12px;color:var(--t1);transition:background .1s}
+.pal-item:hover{background:var(--raised)}
+.pal-ico{width:20px;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.props-panel{width:280px;min-width:280px;background:var(--deep);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.pp-hdr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--raised)}
+.pp-title{font-size:12px;font-weight:600;color:var(--t1)}
 .pp-body{flex:1;overflow-y:auto;padding:14px}
 .pp-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--t3);padding:24px;text-align:center}
-.type-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:700;font-family:var(--mono);margin-bottom:14px}
-/* Live log panel */
-.log-panel{background:var(--void);border:1px solid var(--border);border-radius:7px;font-family:var(--mono);font-size:11px;padding:10px;max-height:200px;overflow-y:auto;margin-top:8px;line-height:1.7}
+.type-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:3px;font-size:11px;font-weight:500;font-family:var(--mono);margin-bottom:14px;border:1px solid currentColor}
+
+/* ── Log panel ── */
+.log-panel{background:var(--raised);border:1px solid var(--border);border-radius:5px;font-family:var(--mono);font-size:11px;padding:10px;max-height:200px;overflow-y:auto;margin-top:8px;line-height:1.7}
 .log-ok{color:var(--green)}.log-err{color:var(--red)}.log-info{color:var(--t2)}.log-warn{color:var(--yellow)}
-/* History */
-.page-content{flex:1;overflow-y:auto;padding:22px;background:var(--void)}
+
+/* ── History / shared page layout ── */
+.page-content{flex:1;overflow-y:auto;padding:24px;background:var(--void)}
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px 16px}
-.stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);font-family:var(--mono)}
-.stat-val{font-size:26px;font-weight:800;margin-top:4px;font-family:var(--mono)}
+.stat-card{background:var(--deep);border:1px solid var(--border);border-radius:6px;padding:16px;box-shadow:var(--shadow-sm)}
+.stat-lbl{font-size:11px;color:var(--t2);font-weight:500;margin-bottom:4px}
+.stat-val{font-size:24px;font-weight:600;margin-top:2px;font-family:var(--mono);color:var(--t1)}
 .stat-sub{font-size:11px;color:var(--t3);margin-top:2px}
-.tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden}
-.tbl-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.tbl-title{font-size:13px;font-weight:700}
+.tbl-card{background:var(--deep);border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.tbl-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--raised)}
+.tbl-title{font-size:13px;font-weight:600;color:var(--t1)}
 table{width:100%;border-collapse:collapse}
-th{text-align:left;padding:9px 14px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--t3);border-bottom:1px solid var(--border);font-family:var(--mono);font-weight:400}
-td{padding:11px 14px;font-size:12.5px;border-bottom:1px solid var(--border)}
+th{text-align:left;padding:9px 14px;font-size:11px;color:var(--t2);border-bottom:1px solid var(--border);font-weight:500;background:var(--raised)}
+td{padding:10px 14px;font-size:12.5px;border-bottom:1px solid var(--border);color:var(--t1)}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--raised)}
 .mono{font-family:var(--mono);font-size:11.5px}
 .filter-row{display:flex;gap:8px;align-items:center;margin-bottom:14px}
-.filter-inp{flex:1;max-width:300px;background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none}
-.filter-inp:focus{border-color:var(--accent)}
-.sel-filter{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:7px 11px;color:var(--t2);font-size:13px;outline:none;cursor:pointer}
+.filter-inp{flex:1;max-width:280px;background:var(--deep);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none;box-shadow:var(--shadow-sm)}
+.filter-inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+.sel-filter{background:var(--deep);border:1px solid var(--border);border-radius:5px;padding:6px 10px;color:var(--t1);font-size:13px;outline:none;cursor:pointer;box-shadow:var(--shadow-sm)}
 .tl-item{display:flex;gap:12px;margin-bottom:10px}
 .tl-dot-col{display:flex;flex-direction:column;align-items:center}
-.tl-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.tl-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
 .tl-line{flex:1;width:1px;background:var(--border);margin-top:3px}
-.tl-content{flex:1;background:var(--raised);border:1px solid var(--border);border-radius:7px;padding:9px 13px}
-/* Credentials */
-.creds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:16px}
-.cred-card{background:var(--surface);border:1px solid var(--border);border-radius:11px;overflow:hidden;transition:border-color .2s}
-.cred-card:hover{border-color:var(--border-hi)}
-.cred-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
-.cred-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-.cred-body{padding:11px 14px}
-.cred-field{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.tl-content{flex:1;background:var(--deep);border:1px solid var(--border);border-radius:5px;padding:9px 13px;box-shadow:var(--shadow-sm)}
+
+/* ── Credentials ── */
+.creds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:16px}
+.cred-card{background:var(--deep);border:1px solid var(--border);border-radius:6px;overflow:hidden;transition:border-color .1s,box-shadow .1s;box-shadow:var(--shadow-sm)}
+.cred-card:hover{border-color:var(--border-hi);box-shadow:var(--shadow-md)}
+.cred-hdr{padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);background:var(--raised)}
+.cred-icon{width:30px;height:30px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;border:1px solid var(--border)}
+.cred-body{padding:10px 14px}
+.cred-field{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
 .cred-fk{font-size:11.5px;color:var(--t3)}.cred-fv{font-size:11.5px;font-family:var(--mono);color:var(--t2)}
-.cred-footer{padding:9px 14px;background:var(--raised);display:flex;gap:7px;justify-content:flex-end;border-top:1px solid var(--border)}
-.add-cred-card{background:transparent;border:1.5px dashed var(--border-hi);border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:28px;cursor:pointer;transition:all .2s;color:var(--t3);min-height:160px}
-.add-cred-card:hover{border-color:var(--accent);color:var(--accent);background:var(--aglow)}
-.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
-.svc-opt{padding:9px 6px;background:var(--raised);border:1.5px solid var(--border);border-radius:7px;cursor:pointer;text-align:center;transition:all .15s;font-size:11.5px}
+.cred-footer{padding:8px 14px;background:var(--raised);display:flex;gap:6px;justify-content:flex-end;border-top:1px solid var(--border)}
+.add-cred-card{background:transparent;border:1.5px dashed var(--border-hi);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:28px;cursor:pointer;transition:all .15s;color:var(--t3);min-height:150px}
+.add-cred-card:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.svc-opt{padding:8px 6px;background:var(--raised);border:1px solid var(--border);border-radius:5px;cursor:pointer;text-align:center;transition:all .1s;font-size:11.5px}
 .svc-opt:hover{border-color:var(--border-hi)}
 .svc-opt.svc-sel{border-color:var(--accent);background:var(--adim);color:var(--accent)}
-.svc-ico{font-size:18px;margin-bottom:3px}
-.enc-notice{background:var(--ydim);border:1px solid rgba(255,176,32,.25);border-radius:7px;padding:9px 13px;margin-bottom:14px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--yellow)}
+.svc-ico{font-size:16px;margin-bottom:3px}
+.enc-notice{background:var(--ydim);border:1px solid rgba(180,83,9,.2);border-radius:5px;padding:9px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--yellow)}
 .loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);gap:10px;font-size:13px}
 </style>
 </head>
@@ -252,20 +289,20 @@ const {useState,useEffect,useRef,useCallback,useReducer}=React;
 
 /* ── Node config ── */
 const NC={
-  trigger:      {bg:'rgba(255,176,32,.12)',  bd:'#ffb020',icon:'⚡',lbl:'TRIGGER'},
-  webhook:      {bg:'rgba(255,77,106,.12)',  bd:'#ff4d6a',icon:'🔗',lbl:'WEBHOOK'},
-  airflow:      {bg:'rgba(255,125,61,.12)',  bd:'#ff7d3d',icon:'🌀',lbl:'AIRFLOW'},
-  sql:          {bg:'rgba(0,214,143,.1)',    bd:'#00d68f',icon:'🗄️',lbl:'SQL'},
-  http:         {bg:'rgba(182,109,255,.1)', bd:'#b66dff',icon:'🌐',lbl:'HTTP'},
-  s3:           {bg:'rgba(255,176,32,.1)',  bd:'#ffb020',icon:'☁️',lbl:'S3'},
-  azure:        {bg:'rgba(0,229,255,.1)',   bd:'#00e5ff',icon:'⬡',lbl:'AZURE'},
-  sftp:         {bg:'rgba(74,222,170,.1)', bd:'#4adeaa',icon:'📁',lbl:'SFTP'},
-  wait:         {bg:'rgba(122,146,176,.1)',bd:'#7a92b0',icon:'⏱',lbl:'WAIT'},
-  if:           {bg:'rgba(255,176,32,.12)',bd:'#ffb020',icon:'⋔',lbl:'IF/ELSE'},
-  set_variable: {bg:'rgba(0,214,143,.08)', bd:'#00d68f',icon:'📌',lbl:'SET VAR'},
-  get_variable: {bg:'rgba(0,214,143,.06)', bd:'#4adeaa',icon:'📎',lbl:'GET VAR'},
-  code:         {bg:'rgba(182,109,255,.1)',bd:'#b66dff',icon:'</>', lbl:'CODE'},
-  call_workflow:{bg:'rgba(0,229,255,.08)', bd:'#00e5ff',icon:'↗',lbl:'CALL WF'},
+  trigger:      {bg:'rgba(180,83,9,.07)',   bd:'#b45309',icon:'⚡',lbl:'TRIGGER'},
+  webhook:      {bg:'rgba(185,28,28,.07)',  bd:'#b91c1c',icon:'⊕',lbl:'WEBHOOK'},
+  airflow:      {bg:'rgba(194,65,12,.07)',  bd:'#c2410c',icon:'◎',lbl:'AIRFLOW'},
+  sql:          {bg:'rgba(21,128,61,.07)',  bd:'#15803d',icon:'▤',lbl:'SQL'},
+  http:         {bg:'rgba(109,40,217,.07)', bd:'#6d28d9',icon:'⊞',lbl:'HTTP'},
+  s3:           {bg:'rgba(29,78,216,.07)',  bd:'#1d4ed8',icon:'◫',lbl:'S3'},
+  azure:        {bg:'rgba(15,118,110,.07)', bd:'#0f766e',icon:'◈',lbl:'AZURE'},
+  sftp:         {bg:'rgba(55,65,81,.07)',   bd:'#374151',icon:'◧',lbl:'SFTP'},
+  wait:         {bg:'rgba(107,114,128,.07)',bd:'#6b7280',icon:'◷',lbl:'WAIT'},
+  if:           {bg:'rgba(180,83,9,.07)',   bd:'#b45309',icon:'⋔',lbl:'IF/ELSE'},
+  set_variable: {bg:'rgba(29,78,216,.07)',  bd:'#1d4ed8',icon:'≔',lbl:'SET VAR'},
+  get_variable: {bg:'rgba(29,78,216,.07)',  bd:'#1d4ed8',icon:'≡',lbl:'GET VAR'},
+  code:         {bg:'rgba(109,40,217,.07)', bd:'#6d28d9',icon:'{}',lbl:'CODE'},
+  call_workflow:{bg:'rgba(15,118,110,.07)', bd:'#0f766e',icon:'↪',lbl:'CALL WF'},
 };
 
 const SCHEMAS={
@@ -339,7 +376,7 @@ function Toast({toasts}){
   return <div className="toast-wrap">
     {toasts.map(t=>(
       <div key={t.id} className={`toast toast-${t.type}`}>
-        <span>{t.type==='success'?'✅':t.type==='error'?'❌':'ℹ️'}</span>
+        <span>{t.type==='success'?'✅':t.type==='error'?'❌':'ℹ'}</span>
         <span style={{flex:1}}>{t.msg}</span>
       </div>
     ))}
@@ -370,7 +407,7 @@ function LoginPage({onLogin}){
   };
 
   return <div className="login-wrap">
-    <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:'linear-gradient(90deg,transparent,var(--accent),var(--purple),var(--green),transparent)',backgroundSize:'200%',animation:'gm 3s linear infinite'}}/>
+    <div style={{height:3,background:'var(--accent)',borderRadius:'8px 8px 0 0',marginBottom:24}}/>
     <div className="login-card">
       <div className="login-logo">
         <div className="logo-mark">FF</div>
@@ -400,8 +437,160 @@ function LoginPage({onLogin}){
   </div>;
 }
 
+/* ── DSL Preview Card ── */
+function DslPreviewCard({dsl,errors,attempts,source,onSave,pillClass}){
+  const [expanded,setExpanded]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const nodes=dsl.nodes||[];
+  const edges=dsl.edges||[];
+  const hasErrors=errors&&errors.length>0;
+
+  // Build a simple adjacency for flow display
+  const edgeMap={};
+  edges.forEach(e=>{if(!edgeMap[e.from])edgeMap[e.from]=[];edgeMap[e.from].push(e);});
+
+  const propSummary=(node)=>{
+    const p=node.props||{};
+    const t=node.type;
+    if(t==='airflow') return p.dag_id?`dag: ${p.dag_id}`:'';
+    if(t==='sql')     return p.query?p.query.slice(0,50)+(p.query.length>50?'…':''):'';
+    if(t==='if')      return p.left_value&&p.right_value?`${String(p.left_value).slice(0,20)} ${p.operator} ${p.right_value}`:'';
+    if(t==='trigger') return p.cron?`cron: ${p.cron}`:'';
+    if(t==='http')    return p.url?p.url.slice(0,40):'';
+    if(t==='wait')    return p.duration?`${p.duration} ${p.unit||'s'}`:'';
+    return '';
+  };
+
+  const branchBadge=(nodeId)=>{
+    // Find all outgoing edges from this node that have branch labels
+    const out=edgeMap[nodeId]||[];
+    const branches=out.filter(e=>e.branch).map(e=>e.branch);
+    if(!branches.length) return null;
+    return <span style={{fontSize:9,fontFamily:'var(--mono)',marginLeft:4,display:'inline-flex',gap:3}}>
+      {branches.map((b,i)=><span key={i} style={{
+        padding:'1px 4px',borderRadius:3,
+        background:b==='true'?'rgba(0,200,100,.15)':'rgba(255,80,80,.15)',
+        color:b==='true'?'var(--green)':'var(--red)',
+        border:`1px solid ${b==='true'?'var(--green)':'var(--red)'}`,
+      }}>{b.toUpperCase()}</span>)}
+    </span>;
+  };
+
+  const handleSave=async()=>{
+    setSaving(true);
+    try{ await onSave(dsl); }
+    finally{ setSaving(false); }
+  };
+
+  return <div className="wf-card" style={{padding:0,overflow:'hidden'}}>
+    {/* Header */}
+    <div style={{
+      display:'flex',alignItems:'center',gap:8,padding:'10px 14px',
+      background:'rgba(0,229,255,.04)',borderBottom:'1px solid var(--border)',
+    }}>
+      <span style={{fontSize:15}}>⚡</span>
+      <div style={{flex:1}}>
+        <div style={{fontWeight:700,fontSize:13,color:'var(--t1)'}}>{dsl.name}</div>
+        <div style={{fontSize:10,color:'var(--t3)',marginTop:1}}>
+          {nodes.length} node{nodes.length!==1?'s':''} · {edges.length} edge{edges.length!==1?'s':''}
+          {source==='agent'&&<span style={{marginLeft:6,color:'var(--accent)'}}>✦ AI generated</span>}
+          {source==='rule_based'&&<span style={{marginLeft:6,color:'var(--t3)'}}>rule-based</span>}
+          {attempts>0&&<span style={{marginLeft:6,color:'var(--t3)'}}>({attempts} attempt{attempts!==1?'s':''})</span>}
+        </div>
+      </div>
+      {hasErrors
+        ?<span style={{fontSize:10,color:'var(--yellow)',fontWeight:700}}>⚠ {errors.length} issue{errors.length!==1?'s':''}</span>
+        :source==='rule_based'
+          ?<span style={{fontSize:10,color:'var(--t3)',fontWeight:700}}>⬡ fallback</span>
+          :<span style={{fontSize:10,color:'var(--green)',fontWeight:700}}>✓ Valid</span>
+      }
+    </div>
+
+    {/* Flow pills */}
+    <div style={{padding:'10px 14px 4px',overflowX:'auto'}}>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,alignItems:'center'}}>
+        {nodes.map((n,ni)=>(
+          <React.Fragment key={ni}>
+            <span className={`node-pill ${pillClass(n.title||n.type)}`}>
+              {({trigger:'⏰',airflow:'🛫',sql:'🗄',http:'🌐',s3:'🪣',azure:'☁️',sftp:'📁',
+                 if:'⑂',wait:'⏳',set_variable:'📝',get_variable:'📖',code:'⟨⟩',
+                 webhook:'⚡',call_workflow:'↗'})[n.type]||'⬡'} {n.title}
+              {branchBadge(n.id)}
+            </span>
+            {ni<nodes.length-1&&<span style={{color:'var(--t3)',fontSize:10}}>→</span>}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+
+    {/* Expandable node details */}
+    <div style={{padding:'4px 14px 8px'}}>
+      <button
+        style={{fontSize:10,color:'var(--accent)',background:'none',border:'none',cursor:'pointer',padding:'2px 0'}}
+        onClick={()=>setExpanded(e=>!e)}>
+        {expanded?'▲ hide details':'▼ show node details'}
+      </button>
+    </div>
+
+    {expanded&&<div style={{padding:'0 14px 10px',display:'flex',flexDirection:'column',gap:6}}>
+      {nodes.map((n,ni)=>{
+        const outEdges=edgeMap[n.id]||[];
+        const branchEdges=outEdges.filter(e=>e.branch);
+        return <div key={ni} style={{
+          background:'var(--surface2)',borderRadius:6,padding:'8px 10px',fontSize:11,
+          borderLeft:`3px solid ${
+            n.type==='airflow'?'var(--accent)':n.type==='sql'?'var(--green)':
+            n.type==='if'?'var(--yellow)':n.type==='trigger'?'var(--t3)':'var(--border-hi)'
+          }`
+        }}>
+          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
+            <span style={{fontWeight:700,color:'var(--t1)'}}>{n.title}</span>
+            <span style={{fontSize:9,color:'var(--t3)',padding:'1px 4px',background:'rgba(255,255,255,.05)',borderRadius:3}}>{n.type}</span>
+            {branchEdges.map((e,i)=><span key={i} style={{
+              fontSize:9,padding:'1px 4px',borderRadius:3,fontFamily:'var(--mono)',
+              background:e.branch==='true'?'rgba(0,200,100,.12)':'rgba(255,80,80,.12)',
+              color:e.branch==='true'?'var(--green)':'var(--red)',
+            }}>→ {e.branch?.toUpperCase()}</span>)}
+          </div>
+          {propSummary(n)&&<div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--t2)',
+            padding:'3px 6px',background:'rgba(0,0,0,.2)',borderRadius:4,marginTop:2}}>
+            {propSummary(n)}
+          </div>}
+          {n.type==='airflow'&&n.props?.validate_task_patterns?.length>0&&(
+            <div style={{fontSize:10,color:'var(--accent)',marginTop:3}}>
+              ✦ validates tasks: {n.props.validate_task_patterns.join(', ')}
+            </div>
+          )}
+        </div>;
+      })}
+    </div>}
+
+    {/* Validation errors */}
+    {hasErrors&&<div style={{margin:'0 14px 10px',padding:'8px 10px',borderRadius:6,
+      background:'rgba(255,160,0,.08)',border:'1px solid rgba(255,160,0,.25)'}}>
+      <div style={{fontSize:10,fontWeight:700,color:'var(--yellow)',marginBottom:4}}>
+        ⚠ Validation issues (fix in editor after saving):
+      </div>
+      {errors.map((e,i)=><div key={i} style={{fontSize:10,color:'var(--t2)',lineHeight:1.5}}>• {e}</div>)}
+    </div>}
+
+    {/* Actions */}
+    <div style={{padding:'10px 14px',borderTop:'1px solid var(--border)',display:'flex',gap:8,flexWrap:'wrap'}}>
+      <button
+        className="btn btn-primary btn-sm"
+        onClick={handleSave}
+        disabled={saving}
+        title={hasErrors?"Save anyway — fix issues in editor":"Save and open in workflow editor"}>
+        {saving?'Saving…':'Save & Open Editor →'}
+      </button>
+      {dsl.description&&<span style={{fontSize:10,color:'var(--t3)',alignSelf:'center',flex:1}}>{dsl.description.slice(0,80)}</span>}
+    </div>
+  </div>;
+}
+
+
 /* ── Chat Page ── */
-function ChatPage({api,addToast,onOpenWorkflow}){
+function ChatPage({api,addToast,onOpenWorkflow,loadWorkflows}){
   const [input,setInput]=useState('');
   const [typing,setTyping]=useState(false);
   const [msgs,setMsgs]=useState([
@@ -428,7 +617,15 @@ function ChatPage({api,addToast,onOpenWorkflow}){
         body:JSON.stringify({message:txt,session_id:sessionId,history,use_tools:useTools}),
       });
       setSessionId(res.session_id);
-      setMsgs(m=>[...m,{role:'ai',text:res.reply,workflow:res.workflow_dsl,toolCalls:res.tool_calls||[]}]);
+      setMsgs(m=>[...m,{
+        role:'ai',
+        text:res.reply,
+        workflow:res.workflow_dsl,
+        toolCalls:res.tool_calls||[],
+        dslErrors:res.dsl_errors||[],
+        dslAttempts:res.dsl_attempts||0,
+        dslSource:res.dsl_source||'',
+      }]);
     }catch(e){
       addToast('error',`Chat error: ${e.message}`);
       setMsgs(m=>[...m,{role:'ai',text:`Error: ${e.message}`}]);
@@ -439,6 +636,7 @@ function ChatPage({api,addToast,onOpenWorkflow}){
     try{
       const wf=await api('/workflows',{method:'POST',body:JSON.stringify({name:dsl.name||'New Workflow',description:dsl.description||'',dsl,execution_mode:'manual'})});
       addToast('success','Workflow saved');
+      loadWorkflows();
       onOpenWorkflow(wf);
     }catch(e){addToast('error',`Save failed: ${e.message}`);}
   };
@@ -457,13 +655,13 @@ function ChatPage({api,addToast,onOpenWorkflow}){
   };
 
   const toolIcon={
-    airflow_health_check:'🛫',airflow_list_dags:'📋',airflow_get_run_status:'🔍',
-    airflow_list_recent_runs:'📅',airflow_get_task_instances:'🔩',airflow_get_task_log:'📄',
-    sql_execute_query:'🗄',sql_get_row_count:'🔢',sql_list_tables:'📊',sql_describe_table:'🗂',
-    http_get:'🌐',http_health_check:'💚',
-    s3_list_objects:'🪣',s3_object_exists:'🔎',
-    azure_list_blobs:'☁️',azure_blob_exists:'🔎',
-    sftp_list_directory:'📁',sftp_file_exists:'🔎',
+    airflow_health_check:'→',airflow_list_dags:'▤',airflow_get_run_status:'⊙',
+    airflow_list_recent_runs:'◷',airflow_get_task_instances:'⚙',airflow_get_task_log:'▤',
+    sql_execute_query:'▤',sql_get_row_count:'#',sql_list_tables:'▦',sql_describe_table:'▤',
+    http_get:'⊞',http_health_check:'●',
+    s3_list_objects:'◫',s3_object_exists:'⊙',
+    azure_list_blobs:'◫',azure_blob_exists:'⊙',
+    sftp_list_directory:'◧',sftp_file_exists:'⊙',
   };
 
   const ToolCallBlock=({calls})=>{
@@ -471,14 +669,14 @@ function ChatPage({api,addToast,onOpenWorkflow}){
     if(!calls||calls.length===0) return null;
     return <div style={{marginTop:8,borderRadius:7,border:'1px solid rgba(0,229,255,.2)',overflow:'hidden'}}>
       <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',background:'rgba(0,229,255,.06)',cursor:'pointer'}} onClick={()=>setOpen(o=>!o)}>
-        <span style={{fontSize:11,color:'var(--accent)',fontWeight:700}}>🔧 {calls.length} tool call{calls.length>1?'s':''} used</span>
+        <span style={{fontSize:11,color:'var(--accent)',fontWeight:700}}>⚙ {calls.length} tool call{calls.length>1?'s':''} used</span>
         <span style={{marginLeft:'auto',fontSize:10,color:'var(--t3)'}}>{open?'▲ collapse':'▼ expand'}</span>
       </div>
       {open&&<div style={{padding:'8px 10px',display:'flex',flexDirection:'column',gap:8}}>
         {calls.map((c,i)=>(
           <div key={i} style={{background:'var(--surface2)',borderRadius:6,padding:'8px 10px',fontSize:11}}>
             <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
-              <span style={{fontSize:14}}>{toolIcon[c.tool]||'🔧'}</span>
+              <span style={{fontSize:14}}>{toolIcon[c.tool]||'⚙'}</span>
               <span style={{fontFamily:'var(--mono)',color:'var(--accent)',fontWeight:700}}>{c.tool}</span>
               {c.args?.credential&&<span style={{fontSize:10,color:'var(--t3)',marginLeft:'auto'}}>cred: {c.args.credential}</span>}
             </div>
@@ -517,13 +715,13 @@ function ChatPage({api,addToast,onOpenWorkflow}){
     <div className="chat-hist-panel">
       <div className="chp-hdr">
         <span className="chp-lbl">Sessions</span>
-        <button className="btn btn-ghost btn-sm" onClick={()=>{setMsgs([{role:'ai',text:'New session started.'}]);setSessionId(null);}}>+ New</button>
+        <button className="btn btn-ghost btn-sm" onClick={()=>{setMsgs([{role:'ai',text:'New session started.'}]);setSessionId(null);}}>New Session</button>
       </div>
       <div style={{padding:'10px 12px',borderBottom:'1px solid var(--border)'}}>
         <div style={{fontSize:11,color:'var(--t3)',marginBottom:6}}>Mode</div>
         <div style={{display:'flex',gap:6}}>
           <button className={`btn btn-sm ${useTools?'btn-primary':'btn-ghost'}`} onClick={()=>setUseTools(true)}
-            title="Claude can call real connectors mid-chat">🔧 Live Data</button>
+            title="Claude can call real connectors mid-chat">⚙ Live Data</button>
           <button className={`btn btn-sm ${!useTools?'btn-primary':'btn-ghost'}`} onClick={()=>setUseTools(false)}
             title="Generate workflow DSL only, no live queries">⬡ DSL Only</button>
         </div>
@@ -541,23 +739,14 @@ function ChatPage({api,addToast,onOpenWorkflow}){
             <div className="msg-bubble">
               <div style={{whiteSpace:'pre-wrap'}}>{m.text}</div>
               {m.toolCalls?.length>0&&<ToolCallBlock calls={m.toolCalls}/>}
-              {m.workflow&&(
-                <div className="wf-card">
-                  <div className="wf-card-ttl">⚡ Generated Workflow</div>
-                  <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>{m.workflow.name}</div>
-                  <div>
-                    {(m.workflow.nodes||[]).map((n,ni)=>(
-                      <React.Fragment key={ni}>
-                        <span className={`node-pill ${pillClass(n.title||n.type)}`}>{NC[n.type]?.icon||'⬡'} {n.title}</span>
-                        {ni<m.workflow.nodes.length-1&&<span style={{color:'var(--t3)',fontSize:11,margin:'0 1px'}}>→</span>}
-                      </React.Fragment>
-                    ))}
-                  </div>
-                  <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap'}}>
-                    <button className="btn btn-primary btn-sm" onClick={()=>saveAndOpen(m.workflow)}>Save & Open Editor →</button>
-                  </div>
-                </div>
-              )}
+              {m.workflow&&<DslPreviewCard
+                dsl={m.workflow}
+                errors={m.dslErrors||[]}
+                attempts={m.dslAttempts||0}
+                source={m.dslSource||''}
+                onSave={saveAndOpen}
+                pillClass={pillClass}
+              />}
             </div>
           </div>
         ))}
@@ -584,7 +773,22 @@ function ChatPage({api,addToast,onOpenWorkflow}){
 
 /* ── Workflow Editor ── */
 function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
-  const [wf,setWf]=useState(initialWorkflow||{id:null,name:'New Workflow',nodes:[],edges:[]});
+  const _flattenWf=(w)=>{
+    if(!w) return null;
+    // nodes/edges may be: top-level, nested under w.dsl, or missing entirely
+    const nodes = (Array.isArray(w.nodes)&&w.nodes.length>0) ? w.nodes
+                : (Array.isArray(w.dsl?.nodes)&&w.dsl.nodes.length>0) ? w.dsl.nodes
+                : Array.isArray(w.nodes) ? w.nodes          // preserve empty []
+                : Array.isArray(w.dsl?.nodes) ? w.dsl.nodes
+                : [];
+    const edges = (Array.isArray(w.edges)&&w.edges.length>0) ? w.edges
+                : (Array.isArray(w.dsl?.edges)&&w.dsl.edges.length>0) ? w.dsl.edges
+                : Array.isArray(w.edges) ? w.edges
+                : Array.isArray(w.dsl?.edges) ? w.dsl.edges
+                : [];
+    return {...w, nodes, edges};
+  };
+  const [wf,setWf]=useState(_flattenWf(initialWorkflow)||{id:null,name:'New Workflow',nodes:[],edges:[]});
   const [sel,setSel]=useState(null);
   const [dragId,setDragId]=useState(null);
   const [dragOff,setDragOff]=useState({x:0,y:0});
@@ -635,7 +839,7 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
     setWf(w=>({...w,edges:(w.edges||[]).map((e,i)=>i===idx?{...e,branch:branch||undefined}:e)}));
   };
 
-  useEffect(()=>{if(initialWorkflow) setWf({nodes:[],edges:[],...initialWorkflow});},[initialWorkflow]);
+  useEffect(()=>{if(initialWorkflow) setWf(_flattenWf(initialWorkflow));},[initialWorkflow]);
 
   const dsl={nodes:wf.nodes||[],edges:wf.edges||[]};
   const selNode=dsl.nodes.find(n=>n.id===sel);
@@ -787,7 +991,7 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
       const blob=await res.blob();
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');a.href=url;a.download=`flowforge_${safeName}_tests.zip`;a.click();
-      addToast('success','📦 Full CI package: test + conftest + .env + GitHub Actions');
+      addToast('success','⊞ Full CI package: test + conftest + .env + GitHub Actions');
     }catch(e){addToast('error',`ZIP export failed: ${e.message}`);}
   };
 
@@ -796,22 +1000,22 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
   return <div className="wf-layout">
     <div className="canvas-area">
       <div className="canvas-tb">
-        <button className="ctb" onClick={()=>setShowPalette(s=>!s)}>➕ Add</button>
+        <button className="ctb" onClick={()=>setShowPalette(s=>!s)}>+ Add Node</button>
         <div className="ct-sep"/>
-        <button className="ctb" onClick={undo} disabled={!history.length}>↩</button>
-        <button className="ctb" onClick={redo} disabled={!future.length}>↪</button>
+        <button className="ctb" onClick={undo} disabled={!history.length}>Undo</button>
+        <button className="ctb" onClick={redo} disabled={!future.length}>Redo</button>
         <div className="ct-sep"/>
-        <button className="ctb" onClick={save}>💾 Save</button>
+        <button className="ctb" onClick={save}>Save</button>
         <button className={`ctb ${running?'active':''}`} onClick={execute} disabled={running}>
-          {running?'⏳ Running…':'▶ Execute'}
+          {running?'Running…':'Execute'}
         </button>
         <div className="ct-sep"/>
-        <button className="ctb" onClick={()=>exportPytest('run')}>📥 PyTest</button>
-        <button className="ctb" onClick={exportPytestZip} title="Download full CI zip">📦 ZIP</button>
-        {runId&&<button className="ctb" onClick={()=>{window.open(`/api/executions/${runId}/logs`,'_blank');}}>📋 Logs</button>}
+        <button className="ctb" onClick={()=>exportPytest('run')}>Export PyTest</button>
+        <button className="ctb" onClick={exportPytestZip} title="Download full CI zip">Export ZIP</button>
+        {runId&&<button className="ctb" onClick={()=>{window.open(`/api/executions/${runId}/logs`,'_blank');}}>View Logs</button>}
         <div className="ct-sep"/>
-        <button className="ctb" onClick={()=>{setPan({x:0,y:0});setZoom(1);}}>⊡</button>
-        <button className="ctb" onClick={()=>setShowSettings(true)}>⚙️</button>
+        <button className="ctb" onClick={()=>{setPan({x:0,y:0});setZoom(1);}}>Reset View</button>
+        <button className="ctb" onClick={()=>setShowSettings(true)}>Settings</button>
       </div>
       {showSettings&&wf.id&&<WorkflowSettingsModal wf={wf} api={api} addToast={addToast}
         onClose={()=>setShowSettings(false)} onSave={updated=>setWf(w=>({...w,...updated}))}
@@ -942,7 +1146,7 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
         return <>
           <div className="pp-hdr">
             <span className="pp-title">Edge Properties</span>
-            <button className="btn btn-danger btn-sm" onClick={()=>deleteEdge(selEdge)}>✕ Delete</button>
+            <button className="btn btn-danger btn-sm" onClick={()=>deleteEdge(selEdge)}>Delete Edge</button>
           </div>
           <div style={{padding:'14px'}}>
             <div style={{fontSize:11,color:'var(--t3)',marginBottom:4}}>Connection</div>
@@ -995,7 +1199,7 @@ function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
       {selNode&&<>
         <div className="pp-hdr">
           <span className="pp-title">Properties</span>
-          <button className="btn btn-danger btn-sm" onClick={()=>deleteNode(sel)}>✕</button>
+          <button className="btn btn-danger btn-sm" onClick={()=>deleteNode(sel)}>Delete</button>
         </div>
         <NodeProps node={selNode} onChange={updateProp} api={api} addToast={addToast}/>
         <div style={{padding:'12px 14px',borderTop:'1px solid var(--border)'}}>
@@ -1075,8 +1279,8 @@ function NodeProps({node,onChange,api,addToast}){
                 </select>
               : <input className="inp" type={field.t||'text'} defaultValue={node.props?.[field.k]??field.d??''} onChange={e=>onChange(node.id,field.k,field.t==='number'?Number(e.target.value):e.target.value)}/>
             }
-            {(String(node.props?.[field.k]||field.d||'')).includes('{{')&&<div className="hint">💡 Expression — references upstream node output or $var.key</div>}
-            {field.hint&&<div className="hint" style={{color:'var(--accent)',opacity:.8}}>💡 {field.hint}</div>}
+            {(String(node.props?.[field.k]||field.d||'')).includes('{{')&&<div className="hint">→ Expression — references upstream node output or $var.key</div>}
+            {field.hint&&<div className="hint" style={{color:'var(--accent)',opacity:.8}}>→ {field.hint}</div>}
           </div>
         );
       })}
@@ -1155,12 +1359,12 @@ function HistoryPage({api,addToast,workflows}){
       ))}
     </div>
     <div className="filter-row">
-      <input className="filter-inp" placeholder="🔍 Search…" value={filter} onChange={e=>setFilter(e.target.value)}/>
+      <input className="filter-inp" placeholder="⊙ Search…" value={filter} onChange={e=>setFilter(e.target.value)}/>
       <select className="sel-filter" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
         <option value="all">All Status</option><option value="success">Success</option><option value="failed">Failed</option><option value="running">Running</option>
       </select>
-      <button className="btn btn-ghost btn-sm" onClick={load}>🔄 Refresh</button>
-      {workflows&&workflows.length>0&&<button className="btn btn-primary btn-sm" onClick={()=>{setShowBulk(true);setBulkSel([]);setBulkResults([]);}}>▶▶ Bulk Run</button>}
+      <button className="btn btn-ghost btn-sm" onClick={load}>↺ Refresh</button>
+      {workflows&&workflows.length>0&&<button className="btn btn-primary btn-sm" onClick={()=>{setShowBulk(true);setBulkSel([]);setBulkResults([]);}}>Bulk Run</button>}
     </div>
 
     {showBulk&&(
@@ -1216,8 +1420,8 @@ function HistoryPage({api,addToast,workflows}){
               <td><span className="mono">{r.started_at?new Date(r.started_at).toLocaleString():'-'}</span></td>
               <td><span className="mono">{r.duration_seconds?`${r.duration_seconds.toFixed(1)}s`:'-'}</span></td>
               <td><div style={{display:'flex',gap:5}}>
-                <button className="btn btn-ghost btn-sm" onClick={()=>setSelRun(r)}>📋 Logs</button>
-                <button className="btn btn-ghost btn-sm" onClick={()=>{window.open(`/api/executions/${r.id}/logs`,'_blank');}}>⬇</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setSelRun(r)}>▤ Logs</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>{window.open(`/api/executions/${r.id}/logs`,'_blank');}}>Logs</button>
               </div></td>
             </tr>
           ))}
@@ -1292,7 +1496,7 @@ function ExecModal({runId,api,onClose,addToast}){
         })}
       </div>
       <div className="mfoot">
-        <button className="btn btn-ghost btn-sm" onClick={()=>window.open(`/api/executions/${run.id}/logs`,'_blank')}>📋 Full Log</button>
+        <button className="btn btn-ghost btn-sm" onClick={()=>window.open(`/api/executions/${run.id}/logs`,'_blank')}>Full Log</button>
         <button className="btn btn-secondary btn-sm" onClick={onClose}>Close</button>
       </div>
     </div>
@@ -1311,12 +1515,12 @@ function CredentialsPage({api,addToast}){
   const [saving,setSaving]=useState(false);
 
   const SVCS=[
-    {type:'airflow',icon:'🌀',lbl:'Airflow',fields:['base_url','username','password']},
-    {type:'mssql',icon:'🗄️',lbl:'MSSQL',fields:['server','database','username','password']},
-    {type:'http',icon:'🌐',lbl:'HTTP',fields:['base_url','bearer_token','api_key']},
-    {type:'s3',icon:'☁️',lbl:'S3',fields:['region','access_key_id','secret_access_key']},
+    {type:'airflow',icon:'◎',lbl:'Airflow',fields:['base_url','username','password']},
+    {type:'mssql',icon:'▤',lbl:'MSSQL',fields:['server','database','username','password']},
+    {type:'http',icon:'⊞',lbl:'HTTP',fields:['base_url','bearer_token','api_key']},
+    {type:'s3',icon:'◫',lbl:'S3',fields:['region','access_key_id','secret_access_key']},
     {type:'azure',icon:'⬡',lbl:'Azure',fields:['account_name','container','storage_key']},
-    {type:'sftp',icon:'📁',lbl:'SFTP',fields:['host','username','password','port']},
+    {type:'sftp',icon:'◧',lbl:'SFTP',fields:['host','username','password','port']},
   ];
 
   const load=async()=>{
@@ -1370,13 +1574,13 @@ function CredentialsPage({api,addToast}){
       </div>
       <button className="btn btn-primary" onClick={openAdd}>+ Add Credential</button>
     </div>
-    <div className="enc-notice">🔐 All credentials encrypted at rest. Nodes reference by name — secrets never transmitted to browser.</div>
+    <div className="enc-notice">◉ All credentials encrypted at rest. Nodes reference by name — secrets never transmitted to browser.</div>
     <div className="creds-grid">
       {creds.map(c=>(
         <div key={c.id} className="cred-card">
           <div className="cred-hdr">
             <div className="cred-icon" style={{background:'rgba(0,229,255,.1)',border:'1px solid rgba(0,229,255,.2)'}}>
-              {SVCS.find(s=>s.type===c.service_type)?.icon||'🔑'}
+              {SVCS.find(s=>s.type===c.service_type)?.icon||'◉'}
             </div>
             <div style={{flex:1,minWidth:0}}>
               <div style={{fontWeight:700,fontSize:14}}>{c.name}</div>
@@ -1392,8 +1596,8 @@ function CredentialsPage({api,addToast}){
             ))}
           </div>
           <div className="cred-footer">
-            <button className="btn btn-ghost btn-sm" onClick={()=>test(c)}>🔌 Test</button>
-            <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(c)}>✏️ Edit</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>test(c)}>⊕ Test</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(c)}>✏ Edit</button>
             <button className="btn btn-danger btn-sm" onClick={()=>del(c.id)}>✕</button>
           </div>
         </div>
@@ -1438,7 +1642,7 @@ function CredentialsPage({api,addToast}){
           </div>
           <div className="mfoot">
             <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Cancel</button>
-            <button className="btn btn-primary" onClick={save} disabled={saving}>🔐 {saving?'Saving…':'Save Encrypted'}</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>◉ {saving?'Saving…':'Save Encrypted'}</button>
           </div>
         </div>
       </div>
@@ -1502,7 +1706,7 @@ function VariablesPage({api,addToast,workflows}){
       <button className="btn btn-primary" onClick={openAdd}>+ New Variable</button>
     </div>
     <div style={{marginBottom:14}}>
-      <input className="filter-inp" placeholder="🔍 Filter variables…" value={filter} onChange={e=>setFilter(e.target.value)} style={{maxWidth:320}}/>
+      <input className="filter-inp" placeholder="⊙ Filter variables…" value={filter} onChange={e=>setFilter(e.target.value)} style={{maxWidth:320}}/>
     </div>
     {['workflow','global'].map(scope=>(
       <div key={scope} style={{marginBottom:20}}>
@@ -1521,7 +1725,7 @@ function VariablesPage({api,addToast,workflows}){
                       <td><span style={{fontSize:11,color:'var(--t3)'}}>{scope==='workflow'?(workflows.find(w=>w.id===v.workflow_id)?.name||v.workflow_id||'—'):'global'}</span></td>
                       <td><span className="mono" style={{fontSize:11,color:'var(--t3)'}}>{new Date(v.updated_at).toLocaleDateString()}</span></td>
                       <td><div style={{display:'flex',gap:5}}>
-                        <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(v)}>✏️</button>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(v)}>✏</button>
                         <button className="btn btn-danger btn-sm" onClick={()=>del(v.id)}>✕</button>
                       </div></td>
                     </tr>
@@ -1610,7 +1814,7 @@ function WorkflowSettingsModal({wf,api,addToast,onClose,onSave,workflows}){
   return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal modal-sm">
       <div className="mhdr">
-        <div className="mtitle">⚙️ Workflow Settings</div>
+        <div className="mtitle">⚙ Workflow Settings</div>
         <button className="mclose" onClick={onClose}>×</button>
       </div>
       <div className="mbody">
@@ -1664,7 +1868,7 @@ function CronBuilder({value, onChange}){
           onClick={()=>onChange(p.v)}>{p.l}</button>
       ))}
     </div>
-    {value&&value!=='manual'&&<div className="hint">🕐 Next: {(() => { try { return 'Scheduled (server-side cron)'; } catch(e) { return 'Invalid cron'; } })()}</div>}
+    {value&&value!=='manual'&&<div className="hint">◷ Next: {(() => { try { return 'Scheduled (server-side cron)'; } catch(e) { return 'Invalid cron'; } })()}</div>}
   </div>;
 }
 
@@ -1775,7 +1979,7 @@ function MetricsPage({api,addToast,workflows}){
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:18}}>
         {/* Slowest nodes */}
         <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px'}}>
-          <div style={{fontSize:12,fontWeight:700,marginBottom:10,color:'var(--t2)'}}>🐢 Slowest Nodes (avg)</div>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:10,color:'var(--t2)'}}>~ Slowest Nodes (avg)</div>
           {nodes.slowest.length===0
             ? <div style={{color:'var(--t3)',fontSize:13}}>No execution data yet.</div>
             : nodes.slowest.slice(0,8).map(n=>{
@@ -1797,9 +2001,9 @@ function MetricsPage({api,addToast,workflows}){
         </div>
         {/* Most failed nodes */}
         <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px'}}>
-          <div style={{fontSize:12,fontWeight:700,marginBottom:10,color:'var(--t2)'}}>🔴 Most Failed Nodes</div>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:10,color:'var(--t2)'}}>● Most Failed Nodes</div>
           {nodes.most_failed.length===0
-            ? <div style={{color:'var(--t3)',fontSize:13}}>No failures 🎉</div>
+            ? <div style={{color:'var(--t3)',fontSize:13}}>No failures ✓</div>
             : nodes.most_failed.slice(0,8).map(n=>(
               <div key={n.node_key} style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
                 <div style={{flex:1,minWidth:0}}>
@@ -1818,7 +2022,7 @@ function MetricsPage({api,addToast,workflows}){
 
       {/* Per-workflow table */}
       {wfList.length>0&&<div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px',marginBottom:18}}>
-        <div style={{fontSize:12,fontWeight:700,marginBottom:12,color:'var(--t2)'}}>📋 All Workflows</div>
+        <div style={{fontSize:12,fontWeight:700,marginBottom:12,color:'var(--t2)'}}>▤ All Workflows</div>
         <div className="tbl-card">
           <table>
             <thead><tr><th>Workflow</th><th>Runs</th><th>Success %</th><th>Avg</th><th>Last Run</th><th>Status</th></tr></thead>
@@ -1844,7 +2048,7 @@ function MetricsPage({api,addToast,workflows}){
 
     {/* Per-workflow drill-down */}
     <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px'}}>
-      <div style={{fontSize:12,fontWeight:700,marginBottom:12,color:'var(--t2)'}}>🔍 Workflow Drill-down</div>
+      <div style={{fontSize:12,fontWeight:700,marginBottom:12,color:'var(--t2)'}}>⊙ Workflow Drill-down</div>
       <select className="sel" style={{maxWidth:360,marginBottom:12}} value={selWf} onChange={e=>setSelWf(e.target.value)}>
         <option value="">— Click a row above or select —</option>
         {workflows.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}
@@ -1955,7 +2159,7 @@ function TemplatesPage({api,addToast,onOpenWorkflow,setPage}){
       </div>
     </div>
     <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
-      <input className="filter-inp" placeholder="🔍 Search…" value={search} onChange={e=>setSearch(e.target.value)} style={{maxWidth:220}}/>
+      <input className="filter-inp" placeholder="⊙ Search…" value={search} onChange={e=>setSearch(e.target.value)} style={{maxWidth:220}}/>
       <select className="sel" style={{maxWidth:180}} value={catFilter} onChange={e=>setCatFilter(e.target.value)}>
         <option value="">All categories</option>
         {cats.map(c=><option key={c}>{c}</option>)}
@@ -1984,7 +2188,7 @@ function TemplatesPage({api,addToast,onOpenWorkflow,setPage}){
             {t.node_types.map(nt=><span key={nt} style={{fontSize:10,fontFamily:'var(--mono)',padding:'1px 6px',borderRadius:4,background:'rgba(255,255,255,.04)',border:'1px solid var(--border)',color:'var(--t3)'}}>{nt}</span>)}
           </div>
           <div style={{display:'flex',gap:7,marginTop:4}}>
-            <button className="btn btn-ghost btn-sm" onClick={()=>setPreview(t)}>👁 Preview</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>setPreview(t)}>· Preview</button>
             <button className="btn btn-primary btn-sm" style={{flex:1}} disabled={cloning===t.id} onClick={()=>clone(t.id,t.name)}>
               {cloning===t.id?'Cloning…':'Use Template →'}
             </button>
@@ -2056,40 +2260,49 @@ function App(){
 
   useEffect(()=>{if(token) loadWorkflows();},[token]);
 
-  const openWorkflow=(wf)=>{setCurrentWf(wf);setPage('workflow');};
+  const openWorkflow=async(wf)=>{
+    if(!api) return;
+    try{
+      // List endpoint omits dsl — fetch full record so nodes/edges are present
+      const full = (wf.dsl || wf.nodes) ? wf : await api('/workflows/'+wf.id);
+      setCurrentWf(full);setPage('workflow');
+    }catch(e){
+      setCurrentWf(wf);setPage('workflow');
+    }
+  };
 
   if(!token) return <LoginPage onLogin={onLogin}/>;
 
   const navItems=[
-    {id:'chat',icon:'💬',label:'AI Chat'},
-    {id:'workflow',icon:'⬡',label:'Workflow Editor'},
-    {id:'history',icon:'📋',label:'Execution History'},
-    {id:'metrics',icon:'📊',label:'Metrics'},
-    {id:'templates',icon:'📦',label:'Templates'},
-    {id:'variables',icon:'📌',label:'Variables'},
-    {id:'credentials',icon:'🔐',label:'Credentials'},
+    {id:'chat',icon:'◻',label:'AI Chat'},
+    {id:'workflow',icon:'◈',label:'Workflow Editor'},
+    {id:'history',icon:'◷',label:'Execution History'},
+    {id:'metrics',icon:'▦',label:'Metrics'},
+    {id:'templates',icon:'⊞',label:'Templates'},
+    {id:'variables',icon:'≔',label:'Variables'},
+    {id:'credentials',icon:'◉',label:'Credentials'},
   ];
 
   const topTitles={
-    chat:'💬 AI Prompt → Workflow Generator',
-    workflow:`⬡ ${currentWf?.name||'Workflow Editor'}`,
-    history:'📋 Execution History',
-    metrics:'📊 Execution Metrics',
-    templates:'📦 Workflow Templates',
-    variables:'📌 Workflow Variables',
-    credentials:'🔐 Credential Vault',
+    chat:'AI Prompt  →  Workflow Generator',
+    workflow:`${currentWf?.name||'Workflow Editor'}`,
+    history:'Execution History',
+    metrics:'Execution Metrics',
+    templates:'Workflow Templates',
+    variables:'Workflow Variables',
+    credentials:'Credential Vault',
   };
 
   const initials=(user?.email||'U').slice(0,2).toUpperCase();
 
   return <>
-    <div className="accent-line"/>
+
     <div className="shell">
       <div className="sidebar">
         <div className="logo-wrap">
           <div className="logo-mark">FF</div>
           <div>
-            <div className="logo-text">FlowForge</div>
+            <div className="logo-text">FlowForge</div><div style={{fontSize:11,color:'var(--t3)',marginTop:1}}>Workflow Automation</div>
             <div style={{fontSize:9,color:'var(--t3)',fontFamily:'var(--mono)'}}>v3.0 production</div>
           </div>
         </div>
@@ -2104,7 +2317,7 @@ function App(){
             <div className="nav-sec" style={{marginTop:8}}>Saved Workflows</div>
             {workflows.map(w=>(
               <div key={w.id} className="nav-item" onClick={()=>openWorkflow(w)} style={{paddingLeft:14}}>
-                <span className="nav-icon" style={{fontSize:11}}>⬡</span>
+                <span className="nav-icon" style={{fontSize:11}}>◈</span>
                 <span style={{fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{w.name}</span>
               </div>
             ))}
@@ -2124,17 +2337,14 @@ function App(){
         <div className="topbar">
           <span className="topbar-title">{topTitles[page]}</span>
           <div style={{display:'flex',gap:8}}>
-            {page==='workflow'&&<>
-              <button className="btn btn-success btn-sm" onClick={()=>addToast('info','Use toolbar to save')}>💾 Save</button>
-              <button className="btn btn-primary btn-sm" onClick={()=>addToast('info','Use toolbar to execute')}>▶ Execute</button>
-            </>}
-            {page==='history'&&<button className="btn btn-ghost btn-sm" onClick={()=>setPage('history')}>🔄 Refresh</button>}
-            <button className="btn btn-ghost btn-sm" onClick={()=>window.open('/api/health','_blank')}>⚙️ Health</button>
+
+            {page==='history'&&<button className="btn btn-ghost btn-sm" onClick={()=>setPage('history')}>Refresh</button>}
+            <button className="btn btn-ghost btn-sm" onClick={()=>window.open('/api/health','_blank')}>Health</button>
           </div>
         </div>
         <div className="page">
-          {page==='chat'    &&<ChatPage api={api} addToast={addToast} onOpenWorkflow={openWorkflow}/>}
-          {page==='workflow'&&<WorkflowPage api={api} initialWorkflow={currentWf} addToast={addToast} token={token} workflows={workflows}/>}
+          {page==='chat'    &&<ChatPage api={api} addToast={addToast} onOpenWorkflow={openWorkflow} loadWorkflows={loadWorkflows}/>}
+          {page==='workflow'&&<WorkflowPage key={currentWf?.id||(currentWf?._ts||'new')} api={api} initialWorkflow={currentWf} addToast={addToast} token={token} workflows={workflows}/>}
           {page==='history' &&<HistoryPage api={api} addToast={addToast} workflows={workflows}/>}
           {page==='metrics' &&<MetricsPage api={api} addToast={addToast} workflows={workflows}/>}
           {page==='templates'&&<TemplatesPage api={api} addToast={addToast} onOpenWorkflow={openWorkflow} setPage={setPage}/>}

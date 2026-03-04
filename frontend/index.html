@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FlowForge — Workflow Automation</title>
+<!-- All JS served locally from frontend/vendor/ — no CDN, no external requests -->
+<!-- Run: ./download_vendors.sh  to populate these files before first use -->
+<script src="/vendor/react.production.min.js"></script>
+<script src="/vendor/react-dom.production.min.js"></script>
+<script src="/vendor/babel.min.js"></script>
+<!-- Fonts: system stack only — no external requests -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  /* Surfaces */
+  --void:#0b0e17;--deep:#111520;--surface:#161b2b;--raised:#1c2236;--hover:#212840;
+  /* Borders */
+  --border:#232c42;--border-hi:#2f3c58;
+  /* Text */
+  --t1:#dce6f5;--t2:#7a87a8;--t3:#3b4868;
+  /* Accent — indigo */
+  --accent:#6c6ef5;--adim:rgba(108,110,245,.14);--aglow:rgba(108,110,245,.06);
+  /* Status */
+  --green:#12d99e;--gdim:rgba(18,217,158,.12);
+  --red:#f44d6a;--rdim:rgba(244,77,106,.12);
+  --yellow:#f6a21e;--ydim:rgba(246,162,30,.12);
+  --purple:#c084fc;--orange:#fb923c;
+  --surface2:#1a2035;
+  /* Typography */
+  --mono:'JetBrains Mono','SF Mono','Cascadia Code',ui-monospace,monospace;
+  --sans:'Inter',-apple-system,'Segoe UI',system-ui,sans-serif;
+  /* Shape */
+  --r:10px;--r-sm:6px;--r-lg:14px;
+  /* Shadows */
+  --shadow-sm:0 1px 3px rgba(0,0,0,.4);
+  --shadow:0 2px 8px rgba(0,0,0,.45);
+  --shadow-md:0 4px 16px rgba(0,0,0,.5);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.55);
+  --shadow-glow:0 0 0 1px var(--accent),0 4px 24px rgba(108,110,245,.25);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;overflow:hidden}
+body{font-family:var(--sans);background:var(--void);color:var(--t1);display:flex;flex-direction:column;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border-hi);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:var(--t3)}
+
+/* ── Shell ── */
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* ── Sidebar ── */
+.sidebar{width:228px;min-width:228px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100;flex-shrink:0}
+.logo-wrap{padding:0 16px;height:56px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-mark{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),#9b7bff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;color:#fff;font-family:var(--mono);flex-shrink:0;letter-spacing:-.5px;box-shadow:0 2px 8px rgba(108,110,245,.4)}
+.logo-text{font-size:14px;font-weight:700;color:var(--t1);letter-spacing:-.3px}
+.nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:1px;overflow-y:auto}
+.nav-sec{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);padding:14px 10px 5px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:8px;cursor:pointer;color:var(--t2);font-size:13px;font-weight:400;transition:background .15s,color .15s;position:relative}
+.nav-item:hover{background:var(--hover);color:var(--t1)}
+.nav-item.active{background:var(--adim);color:var(--accent);font-weight:500}
+.nav-item.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--accent);border-radius:0 3px 3px 0;box-shadow:0 0 8px var(--accent)}
+.nav-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+.sidebar-bot{padding:10px 8px;border-top:1px solid var(--border)}
+.user-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;transition:background .15s}
+.user-chip:hover{background:var(--hover)}
+.user-av{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),#9b7bff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:#fff}
+.user-name{font-size:12.5px;font-weight:600;color:var(--t1)}
+.user-role{font-size:10.5px;color:var(--t3);margin-top:1px}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;background:var(--void)}
+.topbar{height:56px;background:var(--deep);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.topbar-title{font-size:13.5px;font-weight:600;color:var(--t2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.1px}
+.page{flex:1;overflow:hidden;display:flex}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:8px;font-size:12.5px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:var(--sans);transition:all .15s;white-space:nowrap;line-height:1;letter-spacing:-.01em}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(108,110,245,.35)}.btn-primary:hover{background:#5759e8;border-color:#5759e8;box-shadow:0 4px 12px rgba(108,110,245,.45);transform:translateY(-1px)}
+.btn-secondary{background:var(--raised);color:var(--t1);border-color:var(--border-hi)}.btn-secondary:hover{background:var(--hover);border-color:var(--t3)}
+.btn-ghost{background:transparent;color:var(--t2);border-color:var(--border)}.btn-ghost:hover{background:var(--raised);color:var(--t1);border-color:var(--border-hi)}
+.btn-danger{background:transparent;color:var(--red);border-color:var(--border)}.btn-danger:hover{background:var(--rdim);border-color:rgba(244,77,106,.4)}
+.btn-success{background:transparent;color:var(--green);border-color:var(--border)}.btn-success:hover{background:var(--gdim)}
+.btn-sm{padding:4px 9px;font-size:11.5px;border-radius:6px}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none !important;box-shadow:none !important}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);letter-spacing:.02em}
+.badge-success{background:var(--gdim);color:var(--green);border:1px solid rgba(18,217,158,.25)}
+.badge-failed{background:var(--rdim);color:var(--red);border:1px solid rgba(244,77,106,.25)}
+.badge-running{background:var(--ydim);color:var(--yellow);border:1px solid rgba(246,162,30,.25)}
+.badge-pending,.badge-cancelled{background:var(--raised);color:var(--t3);border:1px solid var(--border)}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-family:var(--mono);background:var(--raised);color:var(--t2);border:1px solid var(--border)}
+
+/* ── Form elements ── */
+.inp{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 10px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none;transition:border .15s,box-shadow .15s}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+.inp::placeholder{color:var(--t3)}
+.sel{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 10px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none;cursor:pointer}
+.sel:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+.ta{width:100%;background:var(--raised);border:1px solid var(--border);border-radius:var(--r-sm);padding:7px 10px;color:var(--t1);font-size:12.5px;font-family:var(--mono);outline:none;resize:vertical;min-height:64px;transition:border .15s}
+.ta:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+
+/* ── Property panel ── */
+.prop-grp{margin-bottom:20px}
+.prop-grp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);margin-bottom:9px;font-weight:600;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.prop-field{margin-bottom:11px}
+.prop-lbl{font-size:12px;color:var(--t2);margin-bottom:5px;font-weight:500}
+.hint{font-size:11px;color:var(--t3);margin-top:3px;line-height:1.4}
+
+/* ── Toasts ── */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 15px;display:flex;align-items:center;gap:10px;min-width:270px;max-width:400px;box-shadow:var(--shadow-lg);animation:tIn .2s ease;font-size:13px;color:var(--t1)}
+.toast-success{border-left:3px solid var(--green)}
+.toast-error{border-left:3px solid var(--red)}
+.toast-info{border-left:3px solid var(--accent)}
+@keyframes tIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── Modals ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--deep);border:1px solid var(--border);border-radius:14px;width:700px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);animation:mIn .18s ease}
+.modal-sm{width:480px}
+@keyframes mIn{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.mhdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mtitle{font-size:15px;font-weight:700;color:var(--t1)}
+.mclose{width:28px;height:28px;background:var(--raised);border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--t2);display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .15s}
+.mclose:hover{background:var(--rdim);border-color:rgba(244,77,106,.35);color:var(--red)}
+.mbody{flex:1;overflow-y:auto;padding:20px}
+.mfoot{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;flex-shrink:0;background:var(--raised);border-radius:0 0 14px 14px}
+
+/* ── Login ── */
+.login-wrap{position:fixed;inset:0;background:var(--void);display:flex;align-items:center;justify-content:center;z-index:2000;background-image:radial-gradient(ellipse at 60% 30%,rgba(108,110,245,.08) 0%,transparent 60%)}
+.login-card{background:var(--deep);border:1px solid var(--border);border-radius:16px;padding:36px;width:400px;box-shadow:var(--shadow-lg)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+.login-inp-wrap{margin-bottom:14px}
+.login-lbl{font-size:12px;color:var(--t2);margin-bottom:5px;font-weight:500}
+.err-box{background:var(--rdim);border:1px solid rgba(244,77,106,.3);border-radius:8px;padding:10px 13px;font-size:12.5px;color:var(--red);margin-bottom:14px}
+
+/* ── Chat ── */
+.chat-layout{display:flex;width:100%;overflow:hidden}
+.chat-hist-panel{width:218px;min-width:218px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.chp-hdr{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.chp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);font-weight:600}
+.chp-list{flex:1;overflow-y:auto;padding:6px}
+.chi{padding:9px 11px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:2px;transition:all .15s}
+.chi:hover{background:var(--raised)}
+.chi.active{background:var(--adim);border-color:rgba(108,110,245,.2)}
+.chi-name{font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--t1)}
+.chi-time{font-size:10.5px;color:var(--t3);margin-top:2px}
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--void)}
+.chat-msgs{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:20px}
+.msg-row{display:flex;gap:11px;align-items:flex-start}
+.msg-row.user{flex-direction:row-reverse}
+.msg-av{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.msg-av.ai{background:linear-gradient(135deg,var(--accent),#9b7bff);color:#fff;box-shadow:0 2px 8px rgba(108,110,245,.4)}
+.msg-av.user{background:var(--raised);color:var(--t1);border:1px solid var(--border)}
+.msg-bubble{max-width:68%;border-radius:14px;padding:11px 15px;font-size:13.5px;line-height:1.65;box-shadow:var(--shadow-sm)}
+.msg-row.ai .msg-bubble{background:var(--deep);border:1px solid var(--border);border-top-left-radius:4px;color:var(--t1)}
+.msg-row.user .msg-bubble{background:var(--adim);border:1px solid rgba(108,110,245,.25);border-top-right-radius:4px;color:var(--t1)}
+.wf-card{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:10px}
+.wf-card-ttl{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);margin-bottom:8px;font-weight:600}
+.node-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;margin:2px;font-family:var(--mono);border:1px solid currentColor;opacity:.9}
+.pa{background:rgba(251,146,60,.08);color:#fb923c}.ps{background:rgba(18,217,158,.08);color:var(--green)}
+.ph{background:rgba(192,132,252,.08);color:var(--purple)}.p3{background:rgba(246,162,30,.08);color:var(--yellow)}
+.pz{background:rgba(108,110,245,.08);color:var(--accent)}.pf{background:rgba(45,212,191,.08);color:#2dd4bf}
+.pw{background:rgba(107,114,128,.08);color:var(--t2)}.pif{background:rgba(246,162,30,.08);color:var(--yellow)}
+.pwh{background:rgba(244,77,106,.08);color:var(--red)}
+.td{width:5px;height:5px;background:var(--accent);border-radius:50%;animation:tp 1.3s infinite;display:inline-block;opacity:.7}
+.td:nth-child(2){animation-delay:.18s}.td:nth-child(3){animation-delay:.36s}
+@keyframes tp{0%,80%,100%{transform:scale(1);opacity:.4}40%{transform:scale(1.4);opacity:1}}
+.chat-inp-area{padding:14px 16px;background:var(--deep);border-top:1px solid var(--border)}
+.qpills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.qpill{padding:4px 10px;background:var(--raised);border:1px solid var(--border);border-radius:20px;font-size:11.5px;color:var(--t2);cursor:pointer;transition:all .15s}
+.qpill:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+.inp-wrap{display:flex;gap:8px;align-items:flex-end;background:var(--raised);border:1px solid var(--border);border-radius:12px;padding:9px 11px;transition:border .15s,box-shadow .15s;box-shadow:var(--shadow-sm)}
+.inp-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+.chat-inp{flex:1;background:transparent;border:none;outline:none;color:var(--t1);font-family:var(--sans);font-size:13.5px;resize:none;max-height:100px;line-height:1.5}
+.chat-inp::placeholder{color:var(--t3)}
+.send-btn{width:32px;height:32px;background:var(--accent);border:none;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all .15s;color:#fff;font-weight:700;font-size:14px;box-shadow:0 2px 6px rgba(108,110,245,.4)}
+.send-btn:hover{background:#5759e8;box-shadow:0 4px 10px rgba(108,110,245,.5);transform:translateY(-1px)}
+.send-btn:disabled{background:var(--border);cursor:not-allowed;color:var(--t3);transform:none;box-shadow:none}
+
+/* ── Workflow Canvas ── */
+.wf-layout{display:flex;width:100%;overflow:hidden}
+.canvas-area{flex:1;position:relative;overflow:hidden}
+.canvas{width:100%;height:100%;background-color:var(--void);background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);background-size:22px 22px;position:relative;cursor:grab;overflow:hidden}
+.canvas:active{cursor:grabbing}
+.canvas-tb{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--deep);border:1px solid var(--border);border-radius:10px;padding:5px;display:flex;gap:2px;z-index:20;box-shadow:var(--shadow-md)}
+.ctb{padding:5px 11px;border-radius:7px;background:transparent;border:none;color:var(--t2);font-size:12px;cursor:pointer;font-family:var(--sans);font-weight:400;transition:all .15s;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.ctb:hover{background:var(--raised);color:var(--t1)}
+.ctb.active{background:var(--adim);color:var(--accent)}
+.ctb:disabled{opacity:.3;cursor:not-allowed}
+.ct-sep{width:1px;background:var(--border);margin:3px 4px}
+.zoom-badge{position:absolute;bottom:14px;left:14px;background:var(--deep);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;font-family:var(--mono);color:var(--t3);z-index:20}
+.wf-node{position:absolute;width:185px;background:var(--deep);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s;user-select:none;z-index:5;box-shadow:var(--shadow-sm)}
+.wf-node:hover{border-color:var(--border-hi);box-shadow:var(--shadow)}
+.wf-node.sel{box-shadow:var(--shadow-glow);border-color:var(--accent)}
+.node-hdr{padding:9px 11px 7px;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border)}
+.node-ico{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.node-title{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;color:var(--t1)}
+.node-body{padding:7px 11px 9px}
+.node-prop{font-size:10.5px;color:var(--t3);margin-bottom:2px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-prop span{color:var(--t2)}
+.sdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sd-idle{background:var(--border-hi)}.sd-running{background:var(--yellow);animation:pulse 1s infinite}
+.sd-success{background:var(--green)}.sd-failed{background:var(--red)}.sd-skipped{background:var(--border-hi);opacity:.4}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.port{width:10px;height:10px;background:var(--deep);border:2px solid var(--border-hi);border-radius:50%;position:absolute;transition:all .15s;cursor:crosshair;z-index:6}
+.port:hover{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+.port-out{right:-5px;top:50%;transform:translateY(-50%)}.port-in{left:-5px;top:50%;transform:translateY(-50%)}
+.edges-svg{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.palette{position:absolute;left:14px;top:62px;background:var(--deep);border:1px solid var(--border);border-radius:12px;padding:8px;z-index:20;width:158px;box-shadow:var(--shadow-md)}
+.pal-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--t3);padding:4px 8px 6px;font-weight:600}
+.pal-item{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:7px;cursor:pointer;font-size:12px;color:var(--t1);transition:background .15s}
+.pal-item:hover{background:var(--raised)}
+.pal-ico{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.props-panel{width:288px;min-width:288px;background:var(--deep);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.pp-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--raised)}
+.pp-title{font-size:12px;font-weight:600;color:var(--t1)}
+.pp-body{flex:1;overflow-y:auto;padding:16px}
+.pp-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--t3);padding:28px;text-align:center}
+.type-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);margin-bottom:16px;border:1px solid currentColor}
+
+/* ── Log panel ── */
+.log-panel{background:var(--void);border:1px solid var(--border);border-radius:7px;font-family:var(--mono);font-size:11px;padding:10px;max-height:200px;overflow-y:auto;margin-top:8px;line-height:1.7}
+.log-ok{color:var(--green)}.log-err{color:var(--red)}.log-info{color:var(--t2)}.log-warn{color:var(--yellow)}
+
+/* ── History / shared page layout ── */
+.page-content{flex:1;overflow-y:auto;padding:24px;background:var(--void)}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--deep);border:1px solid var(--border);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow-sm);transition:border-color .15s,box-shadow .15s}
+.stat-card:hover{border-color:var(--border-hi);box-shadow:var(--shadow)}
+.stat-lbl{font-size:11px;color:var(--t3);font-weight:500;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.stat-val{font-size:26px;font-weight:700;margin-top:2px;font-family:var(--mono);color:var(--t1)}
+.stat-sub{font-size:11px;color:var(--t3);margin-top:3px}
+.tbl-card{background:var(--deep);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm)}
+.tbl-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--raised)}
+.tbl-title{font-size:13px;font-weight:700;color:var(--t1)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 16px;font-size:11px;color:var(--t3);border-bottom:1px solid var(--border);font-weight:600;background:var(--raised);text-transform:uppercase;letter-spacing:.5px}
+td{padding:11px 16px;font-size:12.5px;border-bottom:1px solid var(--border);color:var(--t1)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.mono{font-family:var(--mono);font-size:11.5px}
+.filter-row{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.filter-inp{flex:1;max-width:290px;background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--t1);font-size:13px;font-family:var(--sans);outline:none}
+.filter-inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+.sel-filter{background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:7px 11px;color:var(--t1);font-size:13px;outline:none;cursor:pointer}
+.tl-item{display:flex;gap:13px;margin-bottom:10px}
+.tl-dot-col{display:flex;flex-direction:column;align-items:center}
+.tl-dot{width:9px;height:9px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.tl-line{flex:1;width:1px;background:var(--border);margin-top:3px}
+.tl-content{flex:1;background:var(--raised);border:1px solid var(--border);border-radius:9px;padding:10px 14px;box-shadow:var(--shadow-sm)}
+
+/* ── Credentials ── */
+.creds-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:18px}
+.cred-card{background:var(--deep);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s,box-shadow .15s;box-shadow:var(--shadow-sm)}
+.cred-card:hover{border-color:var(--border-hi);box-shadow:var(--shadow)}
+.cred-hdr{padding:14px 16px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--border);background:var(--raised)}
+.cred-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;border:1px solid var(--border)}
+.cred-body{padding:11px 16px}
+.cred-field{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.cred-fk{font-size:11.5px;color:var(--t3)}.cred-fv{font-size:11.5px;font-family:var(--mono);color:var(--t2)}
+.cred-footer{padding:9px 16px;background:var(--raised);display:flex;gap:6px;justify-content:flex-end;border-top:1px solid var(--border)}
+.add-cred-card{background:transparent;border:1.5px dashed var(--border-hi);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:30px;cursor:pointer;transition:all .15s;color:var(--t3);min-height:150px}
+.add-cred-card:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+.svc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px}
+.svc-opt{padding:9px 6px;background:var(--raised);border:1px solid var(--border);border-radius:8px;cursor:pointer;text-align:center;transition:all .15s;font-size:11.5px}
+.svc-opt:hover{border-color:var(--border-hi)}
+.svc-opt.svc-sel{border-color:var(--accent);background:var(--adim);color:var(--accent)}
+.svc-ico{font-size:17px;margin-bottom:4px}
+.enc-notice{background:rgba(246,162,30,.06);border:1px solid rgba(246,162,30,.2);border-radius:9px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--yellow)}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--t3);gap:10px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<!-- Guard: show a friendly error if vendor files are missing -->
+<script>
+  window.addEventListener('load', function() {
+    if (typeof React === 'undefined' || typeof Babel === 'undefined') {
+      document.getElementById('root').innerHTML =
+        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#050709;color:#e2eaf5;font-family:monospace;gap:16px;text-align:center;padding:24px">' +
+        '<div style="font-size:32px">\u26a0\ufe0f</div>' +
+        '<div style="font-size:18px;font-weight:700;color:#ff4d6a">FlowForge failed to load</div>' +
+        '<div style="color:#7a92b0;max-width:480px">React or Babel could not be loaded from CDN and no local vendor copies were found.</div>' +
+        '<div style="color:#7a92b0;max-width:480px">Run <code style="background:#0e1420;padding:2px 8px;border-radius:4px;color:#00e5ff">./download_vendors.sh</code> once to cache dependencies locally, then reload.</div>' +
+        '</div>';
+    }
+  });
+</script>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useReducer}=React;
+
+/* ── Node config ── */
+const NC={
+  trigger:      {bg:'rgba(180,83,9,.07)',   bd:'#b45309',icon:'⚡',lbl:'TRIGGER'},
+  webhook:      {bg:'rgba(185,28,28,.07)',  bd:'#b91c1c',icon:'⊕',lbl:'WEBHOOK'},
+  airflow:      {bg:'rgba(194,65,12,.07)',  bd:'#c2410c',icon:'◎',lbl:'AIRFLOW'},
+  sql:          {bg:'rgba(21,128,61,.07)',  bd:'#15803d',icon:'▤',lbl:'SQL'},
+  http:         {bg:'rgba(109,40,217,.07)', bd:'#6d28d9',icon:'⊞',lbl:'HTTP'},
+  s3:           {bg:'rgba(29,78,216,.07)',  bd:'#1d4ed8',icon:'◫',lbl:'S3'},
+  azure:        {bg:'rgba(15,118,110,.07)', bd:'#0f766e',icon:'◈',lbl:'AZURE'},
+  sftp:         {bg:'rgba(55,65,81,.07)',   bd:'#374151',icon:'◧',lbl:'SFTP'},
+  wait:         {bg:'rgba(107,114,128,.07)',bd:'#6b7280',icon:'◷',lbl:'WAIT'},
+  if:           {bg:'rgba(180,83,9,.07)',   bd:'#b45309',icon:'⋔',lbl:'IF/ELSE'},
+  set_variable: {bg:'rgba(29,78,216,.07)',  bd:'#1d4ed8',icon:'≔',lbl:'SET VAR'},
+  get_variable: {bg:'rgba(29,78,216,.07)',  bd:'#1d4ed8',icon:'≡',lbl:'GET VAR'},
+  code:         {bg:'rgba(109,40,217,.07)', bd:'#6d28d9',icon:'{}',lbl:'CODE'},
+  call_workflow:{bg:'rgba(15,118,110,.07)', bd:'#0f766e',icon:'↪',lbl:'CALL WF'},
+};
+
+const SCHEMAS={
+  trigger:[{k:'cron',l:'Cron',d:'0 6 * * *'},{k:'timezone',l:'Timezone',d:'UTC'}],
+  webhook:[{k:'method',l:'Method',t:'select',opts:['POST','GET','PUT']},{k:'auth_token',l:'Auth Token',d:''}],
+  airflow:[{k:'dag_id',l:'DAG ID',d:'my_dag'},{k:'timeout',l:'Timeout (s)',t:'number',d:3600},{k:'retries',l:'Retries',t:'number',d:2},{k:'conf',l:'Run Config (JSON)',d:'{}'},{k:'assert_log_contains',l:'Assert Log Contains',d:''},{k:'validate_tasks',l:'Validate Tasks (JSON array)',d:'[]'}],
+  sql:[
+    {k:'query',l:'SQL Query',t:'textarea',d:'SELECT COUNT(*) FROM table'},
+    {k:'expected_row_count',l:'Expected Row Count',t:'number',d:''},
+    {k:'min_row_count',l:'Min Row Count',t:'number',d:''},
+    {k:'assert_no_rows',l:'Assert No Rows',t:'select',opts:['false','true']},
+    {k:'export_format',l:'Export Format',t:'select',opts:['none','csv','xlsx']},
+    {k:'extract_column',l:'Extract Column',d:'',hint:'Column name to extract from result (e.g. customer_id)'},
+    {k:'extract_row',l:'Extract Row Index',t:'number',d:0,hint:'Which row to read (0 = first row)'},
+    {k:'output_as',l:'Output As',d:'',hint:'Key name in output (e.g. cust_id → use as {{$node.SQL.output.cust_id}})'},
+    {k:'assert_column_equals',l:'Assert Column Equals',d:'',hint:'Fail if extracted value ≠ this'},
+    {k:'assert_column_not_null',l:'Assert Not Null',t:'select',opts:['false','true']},
+    {k:'assert_column_in',l:'Assert Value In (JSON array)',d:'',hint:'e.g. ["ACTIVE","PENDING"]'},
+    {k:'assert_greater_than',l:'Assert > (numeric)',d:'',hint:'Fail if extracted value ≤ this'},
+    {k:'assert_less_than',l:'Assert < (numeric)',d:''},
+    {k:'extract_columns',l:'Multi-Column Extract (JSON)',t:'textarea',d:'',
+      hint:'[{"column":"id","output_as":"order_id"},{"column":"status","assert_in":["ACTIVE"]}]'},
+  ],
+  http:[{k:'method',l:'Method',t:'select',opts:['GET','POST','PUT','DELETE','PATCH']},{k:'url',l:'URL',d:'https://'},{k:'expected_status',l:'Expected Status',t:'number',d:200},{k:'headers',l:'Headers (JSON)',t:'textarea',d:'{}'},{k:'body',l:'Body (JSON)',t:'textarea',d:''},{k:'assert_body_contains',l:'Assert Body Contains',d:''},{k:'assert_json_field',l:'Assert JSON Field',d:''}],
+  s3:[{k:'bucket',l:'Bucket',d:''},{k:'key',l:'Object Key',d:'path/file.csv'},{k:'region',l:'Region',d:'us-east-1'},{k:'operation',l:'Operation',t:'select',opts:['upload','download','list','exists','delete']},{k:'local_path',l:'Local Path',d:''}],
+  azure:[{k:'container',l:'Container',d:''},{k:'blob_name',l:'Blob Name',d:'file.csv'},{k:'operation',l:'Operation',t:'select',opts:['upload','download','list','exists']},{k:'local_path',l:'Local Path',d:''}],
+  sftp:[{k:'remote_path',l:'Remote Path',d:'/data/'},{k:'local_path',l:'Local Path',d:'/tmp/file'},{k:'operation',l:'Operation',t:'select',opts:['upload','download','list','exists','delete']}],
+  wait:[{k:'duration',l:'Duration',t:'number',d:30},{k:'unit',l:'Unit',t:'select',opts:['seconds','minutes','hours']}],
+  if:[{k:'left_value',l:'Left Value',d:'{{$node.NodeName.output.field}}'},{k:'operator',l:'Operator',t:'select',opts:['equals','not_equals','contains','greater_than','less_than','is_empty','not_empty']},{k:'right_value',l:'Right Value',d:'0'},{k:'assert_true',l:'Assert True',t:'select',opts:['false','true']}],
+  set_variable:[
+    {k:'key',l:'Variable Key',d:'my_var'},
+    {k:'value',l:'Value (or expression)',d:'{{$node.SQL.output.rows_returned}}'},
+    {k:'scope',l:'Scope',t:'select',opts:['workflow','global']},
+    {k:'cast',l:'Cast To',t:'select',opts:['auto','string','number','boolean','json']},
+  ],
+  get_variable:[
+    {k:'key',l:'Variable Key',d:'my_var'},
+    {k:'default',l:'Default (if missing)',d:''},
+    {k:'assert_set',l:'Assert Variable Exists',t:'select',opts:['false','true']},
+  ],
+  code:[
+    {k:'code',l:'Python Code',t:'textarea',d:"output['result'] = input_data.get('rows_returned', 0)"},
+    {k:'timeout',l:'Timeout (s)',t:'number',d:30},
+    {k:'language',l:'Language',t:'select',opts:['python']},
+  ],
+  call_workflow:[
+    {k:'workflow_id',l:'Sub-Workflow ID',d:''},
+    {k:'fail_on_error',l:'Fail Parent on Error',t:'select',opts:['true','false']},
+  ],
+};
+
+/* ── API client ── */
+function makeApi(token){
+  return async function api(path, opts={}){
+    const res = await fetch(`/api${path}`,{
+      ...opts,
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`,...(opts.headers||{})},
+    });
+    if(!res.ok){
+      const txt = await res.text();
+      let msg=txt;
+      try{msg=JSON.parse(txt).detail||txt;}catch(e){}
+      throw new Error(msg);
+    }
+    return res.json();
+  };
+}
+
+/* ── Toast ── */
+function Toast({toasts}){
+  return <div className="toast-wrap">
+    {toasts.map(t=>(
+      <div key={t.id} className={`toast toast-${t.type}`}>
+        <span>{t.type==='success'?'✅':t.type==='error'?'❌':'ℹ'}</span>
+        <span style={{flex:1}}>{t.msg}</span>
+      </div>
+    ))}
+  </div>;
+}
+
+/* ── Login ── */
+function LoginPage({onLogin}){
+  const [email,setEmail]=useState('admin@flowforge.local');
+  const [pass,setPass]=useState('admin123');
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState('');
+
+  const submit=async(e)=>{
+    e.preventDefault();
+    setLoading(true);setErr('');
+    try{
+      const res=await fetch('/api/auth/login',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,password:pass}),
+      });
+      if(!res.ok){const d=await res.json();throw new Error(d.detail||'Login failed');}
+      const data=await res.json();
+      onLogin(data.access_token,data.user||{email,sub:email});
+    }catch(e){setErr(e.message);}
+    finally{setLoading(false);}
+  };
+
+  return <div className="login-wrap">
+    <div className="login-card">
+      <div className="login-logo">
+        <div className="logo-mark" style={{width:40,height:40,fontSize:14,borderRadius:11}}>FF</div>
+        <div>
+          <div style={{fontSize:20,fontWeight:800,color:'var(--t1)',letterSpacing:'-.5px'}}>FlowForge</div>
+          <div style={{fontSize:11,color:'var(--t3)',fontFamily:'var(--mono)',marginTop:2}}>workflow automation · v4</div>
+        </div>
+      </div>
+      {err&&<div className="err-box">⚠ {err}</div>}
+      <form onSubmit={submit}>
+        <div className="login-inp-wrap">
+          <div className="login-lbl">Email</div>
+          <input className="inp" type="email" value={email} onChange={e=>setEmail(e.target.value)} autoFocus style={{fontSize:14,padding:'9px 12px'}}/>
+        </div>
+        <div className="login-inp-wrap">
+          <div className="login-lbl">Password</div>
+          <input className="inp" type="password" value={pass} onChange={e=>setPass(e.target.value)} style={{fontSize:14,padding:'9px 12px'}}/>
+        </div>
+        <button className="btn btn-primary" style={{width:'100%',marginTop:8,padding:'11px',fontSize:14,justifyContent:'center',borderRadius:10}} disabled={loading}>
+          {loading?'Signing in…':'Sign In'}
+        </button>
+      </form>
+      <div style={{marginTop:16,fontSize:11,color:'var(--t3)',textAlign:'center',fontFamily:'var(--mono)',padding:'10px',background:'var(--raised)',borderRadius:8,border:'1px solid var(--border)'}}>
+        admin@flowforge.local · admin123
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── DSL Preview Card ── */
+function DslPreviewCard({dsl,errors,attempts,source,onSave,pillClass}){
+  const [expanded,setExpanded]=useState(false);
+  const [saving,setSaving]=useState(false);
+  const nodes=dsl.nodes||[];
+  const edges=dsl.edges||[];
+  const hasErrors=errors&&errors.length>0;
+
+  // Build a simple adjacency for flow display
+  const edgeMap={};
+  edges.forEach(e=>{if(!edgeMap[e.from])edgeMap[e.from]=[];edgeMap[e.from].push(e);});
+
+  const propSummary=(node)=>{
+    const p=node.props||{};
+    const t=node.type;
+    if(t==='airflow') return p.dag_id?`dag: ${p.dag_id}`:'';
+    if(t==='sql')     return p.query?p.query.slice(0,50)+(p.query.length>50?'…':''):'';
+    if(t==='if')      return p.left_value&&p.right_value?`${String(p.left_value).slice(0,20)} ${p.operator} ${p.right_value}`:'';
+    if(t==='trigger') return p.cron?`cron: ${p.cron}`:'';
+    if(t==='http')    return p.url?p.url.slice(0,40):'';
+    if(t==='wait')    return p.duration?`${p.duration} ${p.unit||'s'}`:'';
+    return '';
+  };
+
+  const branchBadge=(nodeId)=>{
+    // Find all outgoing edges from this node that have branch labels
+    const out=edgeMap[nodeId]||[];
+    const branches=out.filter(e=>e.branch).map(e=>e.branch);
+    if(!branches.length) return null;
+    return <span style={{fontSize:9,fontFamily:'var(--mono)',marginLeft:4,display:'inline-flex',gap:3}}>
+      {branches.map((b,i)=><span key={i} style={{
+        padding:'1px 4px',borderRadius:3,
+        background:b==='true'?'rgba(0,200,100,.15)':'rgba(255,80,80,.15)',
+        color:b==='true'?'var(--green)':'var(--red)',
+        border:`1px solid ${b==='true'?'var(--green)':'var(--red)'}`,
+      }}>{b.toUpperCase()}</span>)}
+    </span>;
+  };
+
+  const handleSave=async()=>{
+    setSaving(true);
+    try{ await onSave(dsl); }
+    finally{ setSaving(false); }
+  };
+
+  return <div className="wf-card" style={{padding:0,overflow:'hidden',borderRadius:12,marginTop:12}}>
+    {/* Header */}
+    <div style={{
+      display:'flex',alignItems:'center',gap:10,padding:'11px 15px',
+      background:'var(--surface)',borderBottom:'1px solid var(--border)',
+    }}>
+      <span style={{fontSize:16}}>⚡</span>
+      <div style={{flex:1}}>
+        <div style={{fontWeight:700,fontSize:13.5,color:'var(--t1)',letterSpacing:'-.2px'}}>{dsl.name}</div>
+        <div style={{fontSize:10.5,color:'var(--t3)',marginTop:2,fontFamily:'var(--mono)'}}>
+          {nodes.length} node{nodes.length!==1?'s':''} · {edges.length} edge{edges.length!==1?'s':''}
+          {source==='agent'&&<span style={{marginLeft:8,color:'var(--accent)',fontWeight:600}}>✦ AI generated</span>}
+          {source==='rule_based'&&<span style={{marginLeft:8,color:'var(--t3)'}}>rule-based</span>}
+        </div>
+      </div>
+      {hasErrors
+        ?<span style={{fontSize:10.5,color:'var(--yellow)',fontWeight:700,background:'var(--ydim)',padding:'2px 8px',borderRadius:20,border:'1px solid rgba(246,162,30,.3)'}}>⚠ {errors.length} issue{errors.length!==1?'s':''}</span>
+        :<span style={{fontSize:10.5,color:'var(--green)',fontWeight:700,background:'var(--gdim)',padding:'2px 8px',borderRadius:20,border:'1px solid rgba(18,217,158,.25)'}}>✓ Valid</span>
+      }
+    </div>
+
+    {/* Flow pills */}
+    <div style={{padding:'10px 14px 4px',overflowX:'auto'}}>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,alignItems:'center'}}>
+        {nodes.map((n,ni)=>(
+          <React.Fragment key={ni}>
+            <span className={`node-pill ${pillClass(n.title||n.type)}`}>
+              {({trigger:'⏰',airflow:'🛫',sql:'🗄',http:'🌐',s3:'🪣',azure:'☁️',sftp:'📁',
+                 if:'⑂',wait:'⏳',set_variable:'📝',get_variable:'📖',code:'⟨⟩',
+                 webhook:'⚡',call_workflow:'↗'})[n.type]||'⬡'} {n.title}
+              {branchBadge(n.id)}
+            </span>
+            {ni<nodes.length-1&&<span style={{color:'var(--t3)',fontSize:10}}>→</span>}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+
+    {/* Expandable node details */}
+    <div style={{padding:'4px 14px 8px'}}>
+      <button
+        style={{fontSize:10,color:'var(--accent)',background:'none',border:'none',cursor:'pointer',padding:'2px 0'}}
+        onClick={()=>setExpanded(e=>!e)}>
+        {expanded?'▲ hide details':'▼ show node details'}
+      </button>
+    </div>
+
+    {expanded&&<div style={{padding:'0 14px 10px',display:'flex',flexDirection:'column',gap:6}}>
+      {nodes.map((n,ni)=>{
+        const outEdges=edgeMap[n.id]||[];
+        const branchEdges=outEdges.filter(e=>e.branch);
+        return <div key={ni} style={{
+          background:'var(--surface2)',borderRadius:6,padding:'8px 10px',fontSize:11,
+          borderLeft:`3px solid ${
+            n.type==='airflow'?'var(--accent)':n.type==='sql'?'var(--green)':
+            n.type==='if'?'var(--yellow)':n.type==='trigger'?'var(--t3)':'var(--border-hi)'
+          }`
+        }}>
+          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:3}}>
+            <span style={{fontWeight:700,color:'var(--t1)'}}>{n.title}</span>
+            <span style={{fontSize:9,color:'var(--t3)',padding:'1px 4px',background:'rgba(255,255,255,.05)',borderRadius:3}}>{n.type}</span>
+            {branchEdges.map((e,i)=><span key={i} style={{
+              fontSize:9,padding:'1px 4px',borderRadius:3,fontFamily:'var(--mono)',
+              background:e.branch==='true'?'rgba(0,200,100,.12)':'rgba(255,80,80,.12)',
+              color:e.branch==='true'?'var(--green)':'var(--red)',
+            }}>→ {e.branch?.toUpperCase()}</span>)}
+          </div>
+          {propSummary(n)&&<div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--t2)',
+            padding:'3px 6px',background:'rgba(0,0,0,.2)',borderRadius:4,marginTop:2}}>
+            {propSummary(n)}
+          </div>}
+          {n.type==='airflow'&&n.props?.validate_task_patterns?.length>0&&(
+            <div style={{fontSize:10,color:'var(--accent)',marginTop:3}}>
+              ✦ validates tasks: {n.props.validate_task_patterns.join(', ')}
+            </div>
+          )}
+        </div>;
+      })}
+    </div>}
+
+    {/* Validation errors */}
+    {hasErrors&&<div style={{margin:'0 14px 10px',padding:'8px 10px',borderRadius:6,
+      background:'rgba(255,160,0,.08)',border:'1px solid rgba(255,160,0,.25)'}}>
+      <div style={{fontSize:10,fontWeight:700,color:'var(--yellow)',marginBottom:4}}>
+        ⚠ Validation issues (fix in editor after saving):
+      </div>
+      {errors.map((e,i)=><div key={i} style={{fontSize:10,color:'var(--t2)',lineHeight:1.5}}>• {e}</div>)}
+    </div>}
+
+    {/* Actions */}
+    <div style={{padding:'10px 14px',borderTop:'1px solid var(--border)',display:'flex',gap:8,flexWrap:'wrap'}}>
+      <button
+        className="btn btn-primary btn-sm"
+        onClick={handleSave}
+        disabled={saving}
+        title={hasErrors?"Save anyway — fix issues in editor":"Save and open in workflow editor"}>
+        {saving?'Saving…':'Save & Open Editor →'}
+      </button>
+      {dsl.description&&<span style={{fontSize:10,color:'var(--t3)',alignSelf:'center',flex:1}}>{dsl.description.slice(0,80)}</span>}
+    </div>
+  </div>;
+}
+
+
+/* ── Chat Page ── */
+function ChatPage({api,addToast,onOpenWorkflow,loadWorkflows}){
+  const [input,setInput]=useState('');
+  const [typing,setTyping]=useState(false);
+  const [msgs,setMsgs]=useState([
+    {role:'ai',text:"Hi! I'm FlowForge AI with live data access.\n\nI can query your real systems — ask me anything:\n• \"How many rows in the orders table?\" (uses sql_execute_query)\n• \"Did the ETL DAG succeed today?\" (uses airflow_list_recent_runs)\n• \"Is backup.csv in the S3 bucket?\" (uses s3_object_exists)\n\nOr describe a workflow to generate DSL."},
+  ]);
+  const [sessionId,setSessionId]=useState(null);
+  const [useTools,setUseTools]=useState(true);
+  const endRef=useRef(null);
+
+  useEffect(()=>endRef.current?.scrollIntoView({behavior:'smooth'}),[msgs,typing]);
+
+  const send=async()=>{
+    if(!input.trim()||typing) return;
+    const txt=input; setInput('');
+    setMsgs(m=>[...m,{role:'user',text:txt}]);
+    setTyping(true);
+    try{
+      const history=msgs
+        .filter(m=>m.role==='user'||m.role==='ai')
+        .slice(-10)
+        .map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}));
+      const res=await api('/chat/message',{
+        method:'POST',
+        body:JSON.stringify({message:txt,session_id:sessionId,history,use_tools:useTools}),
+      });
+      setSessionId(res.session_id);
+      setMsgs(m=>[...m,{
+        role:'ai',
+        text:res.reply,
+        workflow:res.workflow_dsl,
+        toolCalls:res.tool_calls||[],
+        dslErrors:res.dsl_errors||[],
+        dslAttempts:res.dsl_attempts||0,
+        dslSource:res.dsl_source||'',
+      }]);
+    }catch(e){
+      addToast('error',`Chat error: ${e.message}`);
+      setMsgs(m=>[...m,{role:'ai',text:`Error: ${e.message}`}]);
+    }finally{setTyping(false);}
+  };
+
+  const saveAndOpen=async(dsl)=>{
+    try{
+      const wf=await api('/workflows',{method:'POST',body:JSON.stringify({name:dsl.name||'New Workflow',description:dsl.description||'',dsl,execution_mode:'manual'})});
+      addToast('success','Workflow saved');
+      loadWorkflows();
+      onOpenWorkflow(wf);
+    }catch(e){addToast('error',`Save failed: ${e.message}`);}
+  };
+
+  const pillClass=(n)=>{
+    const t=n.toLowerCase();
+    if(/airflow|dag/.test(t)) return 'pa';
+    if(/sql|query/.test(t)) return 'ps';
+    if(/http|slack|api|notify/.test(t)) return 'ph';
+    if(/s3/.test(t)) return 'p3';
+    if(/azure/.test(t)) return 'pz';
+    if(/sftp/.test(t)) return 'pf';
+    if(/if|check|branch/.test(t)) return 'pif';
+    if(/webhook/.test(t)) return 'pwh';
+    return 'pw';
+  };
+
+  const toolIcon={
+    airflow_health_check:'→',airflow_list_dags:'▤',airflow_get_run_status:'⊙',
+    airflow_list_recent_runs:'◷',airflow_get_task_instances:'⚙',airflow_get_task_log:'▤',
+    sql_execute_query:'▤',sql_get_row_count:'#',sql_list_tables:'▦',sql_describe_table:'▤',
+    http_get:'⊞',http_health_check:'●',
+    s3_list_objects:'◫',s3_object_exists:'⊙',
+    azure_list_blobs:'◫',azure_blob_exists:'⊙',
+    sftp_list_directory:'◧',sftp_file_exists:'⊙',
+  };
+
+  const ToolCallBlock=({calls})=>{
+    const [open,setOpen]=useState(false);
+    if(!calls||calls.length===0) return null;
+    return <div style={{marginTop:8,borderRadius:7,border:'1px solid var(--border)',overflow:'hidden'}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',background:'var(--raised)',cursor:'pointer'}} onClick={()=>setOpen(o=>!o)}>
+        <span style={{fontSize:11,color:'var(--accent)',fontWeight:600}}>⚙ {calls.length} tool call{calls.length>1?'s':''} used</span>
+        <span style={{marginLeft:'auto',fontSize:10,color:'var(--t3)'}}>{open?'▲ collapse':'▼ expand'}</span>
+      </div>
+      {open&&<div style={{padding:'8px 10px',display:'flex',flexDirection:'column',gap:8}}>
+        {calls.map((c,i)=>(
+          <div key={i} style={{background:'var(--surface2)',borderRadius:6,padding:'8px 10px',fontSize:11}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:6}}>
+              <span style={{fontSize:14}}>{toolIcon[c.tool]||'⚙'}</span>
+              <span style={{fontFamily:'var(--mono)',color:'var(--accent)',fontWeight:700}}>{c.tool}</span>
+              {c.args?.credential&&<span style={{fontSize:10,color:'var(--t3)',marginLeft:'auto'}}>cred: {c.args.credential}</span>}
+            </div>
+            {c.args?.query&&<div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--t2)',marginBottom:4,padding:'4px 6px',background:'rgba(0,0,0,.3)',borderRadius:4}}>{c.args.query}</div>}
+            {c.result?.error
+              ? <div style={{color:'var(--red)',fontSize:11}}>❌ {c.result.error}</div>
+              : <div style={{color:'var(--green)',fontSize:10}}>
+                  {c.result?.rows_returned!==undefined&&<span>✓ {c.result.rows_returned} rows returned</span>}
+                  {c.result?.count!==undefined&&<span>✓ count = {c.result.count}</span>}
+                  {c.result?.exists!==undefined&&<span>✓ exists = {String(c.result.exists)}</span>}
+                  {c.result?.state!==undefined&&<span>✓ state = {c.result.state}</span>}
+                  {c.result?.status&&!c.result?.rows_returned&&!c.result?.count&&<span>✓ {c.result.status}</span>}
+                  {c.result?.dags&&<span>✓ {c.result.dags.length} DAGs</span>}
+                  {c.result?.tables&&<span>✓ {c.result.tables.length} tables</span>}
+                  {c.result?.objects&&<span>✓ {c.result.objects.length} objects</span>}
+                  {c.result?.blobs&&<span>✓ {c.result.blobs.length} blobs</span>}
+                  {c.result?.items&&<span>✓ {c.result.items.length} items</span>}
+                  {c.result?.tasks&&<span>✓ {c.result.tasks.length} tasks</span>}
+                  {c.result?.runs&&<span>✓ {c.result.runs.length} runs</span>}
+                </div>
+            }
+          </div>
+        ))}
+      </div>}
+    </div>;
+  };
+
+  const quick=[
+    'How many rows are in the orders table? (use PROD_MSSQL)',
+    'List all DAGs in PROD_AIRFLOW',
+    'Did the ETL DAG succeed in the last run?',
+    'Create a daily Airflow + SQL validation workflow',
+  ];
+
+  return <div className="chat-layout">
+    <div className="chat-hist-panel">
+      <div className="chp-hdr">
+        <span className="chp-lbl">Sessions</span>
+        <button className="btn btn-ghost btn-sm" onClick={()=>{setMsgs([{role:'ai',text:'New session started.'}]);setSessionId(null);}}>New Session</button>
+      </div>
+      <div style={{padding:'10px 12px',borderBottom:'1px solid var(--border)'}}>
+        <div style={{fontSize:11,color:'var(--t3)',marginBottom:6}}>Mode</div>
+        <div style={{display:'flex',gap:6}}>
+          <button className={`btn btn-sm ${useTools?'btn-primary':'btn-ghost'}`} onClick={()=>setUseTools(true)}
+            title="Claude can call real connectors mid-chat">⚙ Live Data</button>
+          <button className={`btn btn-sm ${!useTools?'btn-primary':'btn-ghost'}`} onClick={()=>setUseTools(false)}
+            title="Generate workflow DSL only, no live queries">⬡ DSL Only</button>
+        </div>
+        {useTools&&<div style={{fontSize:10,color:'var(--accent)',marginTop:6}}>
+          Claude will call your connectors to answer data questions.
+        </div>}
+      </div>
+      <div className="chp-list" style={{padding:12,color:'var(--t3)',fontSize:12}}>Sessions stored per login.</div>
+    </div>
+    <div className="chat-main">
+      <div className="chat-msgs">
+        {msgs.map((m,i)=>(
+          <div key={i} className={`msg-row ${m.role}`}>
+            <div className={`msg-av ${m.role}`}>{m.role==='ai'?'FF':'U'}</div>
+            <div className="msg-bubble">
+              <div style={{whiteSpace:'pre-wrap',lineHeight:1.65}}>{m.text}</div>
+              {m.toolCalls?.length>0&&<ToolCallBlock calls={m.toolCalls}/>}
+              {m.workflow&&<DslPreviewCard
+                dsl={m.workflow}
+                errors={m.dslErrors||[]}
+                attempts={m.dslAttempts||0}
+                source={m.dslSource||''}
+                onSave={saveAndOpen}
+                pillClass={pillClass}
+              />}
+            </div>
+          </div>
+        ))}
+        {typing&&(
+          <div className="msg-row">
+            <div className="msg-av ai">FF</div>
+            <div className="msg-bubble" style={{padding:'14px 18px'}}>
+              <div style={{display:'flex',gap:5,alignItems:'center'}}>
+                <div className="td"/><div className="td"/><div className="td"/>
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={endRef}/>
+      </div>
+      <div className="chat-inp-area">
+        <div className="qpills">{quick.map((q,i)=><span key={i} className="qpill" onClick={()=>setInput(q)}>{q}</span>)}</div>
+        <div className="inp-wrap">
+          <textarea className="chat-inp" rows={1} placeholder="Describe your workflow…"
+            value={input} onChange={e=>setInput(e.target.value)}
+            onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}}/>
+          <button className="send-btn" onClick={send} disabled={!input.trim()||typing}>↑</button>
+        </div>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Workflow Editor ── */
+function WorkflowPage({api,initialWorkflow,addToast,token,workflows}){
+  const _flattenWf=(w)=>{
+    if(!w) return null;
+    // nodes/edges may be: top-level, nested under w.dsl, or missing entirely
+    const nodes = (Array.isArray(w.nodes)&&w.nodes.length>0) ? w.nodes
+                : (Array.isArray(w.dsl?.nodes)&&w.dsl.nodes.length>0) ? w.dsl.nodes
+                : Array.isArray(w.nodes) ? w.nodes          // preserve empty []
+                : Array.isArray(w.dsl?.nodes) ? w.dsl.nodes
+                : [];
+    const edges = (Array.isArray(w.edges)&&w.edges.length>0) ? w.edges
+                : (Array.isArray(w.dsl?.edges)&&w.dsl.edges.length>0) ? w.dsl.edges
+                : Array.isArray(w.edges) ? w.edges
+                : Array.isArray(w.dsl?.edges) ? w.dsl.edges
+                : [];
+    return {...w, nodes, edges};
+  };
+  const [wf,setWf]=useState(_flattenWf(initialWorkflow)||{id:null,name:'New Workflow',nodes:[],edges:[]});
+  const [sel,setSel]=useState(null);
+  const [dragId,setDragId]=useState(null);
+  const [dragOff,setDragOff]=useState({x:0,y:0});
+  const [pan,setPan]=useState({x:0,y:0});
+  const [panStart,setPanStart]=useState(null);
+  const [zoom,setZoom]=useState(1);
+  const [execStatus,setExecStatus]=useState({});
+  const [running,setRunning]=useState(false);
+  const [showPalette,setShowPalette]=useState(false);
+  const [history,setHistory]=useState([]);
+  const [future,setFuture]=useState([]);
+  const [liveLog,setLiveLog]=useState('');
+  const [runId,setRunId]=useState(null);
+  const [showSettings,setShowSettings]=useState(false);
+  const canvasRef=useRef(null);
+  const wsRef=useRef(null);
+  const [connecting,setConnecting]=useState(null);
+  const [selEdge,setSelEdge]=useState(null);
+
+  const startConnect=(e,nodeId)=>{
+    e.stopPropagation();
+    const r=canvasRef.current?.getBoundingClientRect();
+    if(!r) return;
+    const cx=e.clientX-r.left, cy=e.clientY-r.top;
+    setConnecting({from:nodeId,startX:cx,startY:cy,x:cx,y:cy});
+  };
+
+  const finishConnect=(toId)=>{
+    if(!connecting||connecting.from===toId) return;
+    pushHistory(wf);
+    setWf(w=>({...w,edges:[...(w.edges||[]),{from:connecting.from,to:toId}]}));
+    setConnecting(null);
+  };
+
+  const selectEdge=(idx,e)=>{
+    e.stopPropagation();
+    setSelEdge(idx===selEdge?null:idx);
+    setSel(null);
+  };
+
+  const deleteEdge=(idx)=>{
+    pushHistory(wf);
+    setWf(w=>({...w,edges:(w.edges||[]).filter((_,i)=>i!==idx)}));
+    setSelEdge(null);
+  };
+
+  const setEdgeBranch=(idx,branch)=>{
+    setWf(w=>({...w,edges:(w.edges||[]).map((e,i)=>i===idx?{...e,branch:branch||undefined}:e)}));
+  };
+
+  useEffect(()=>{if(initialWorkflow) setWf(_flattenWf(initialWorkflow));},[initialWorkflow]);
+
+  const dsl={nodes:wf.nodes||[],edges:wf.edges||[]};
+  const selNode=dsl.nodes.find(n=>n.id===sel);
+
+  const pushHistory=useCallback((state)=>{setHistory(h=>[...h.slice(-19),state]);setFuture([]);},[]);
+  const undo=()=>{if(!history.length)return;const p=history[history.length-1];setFuture(f=>[wf,...f]);setHistory(h=>h.slice(0,-1));setWf(p);};
+  const redo=()=>{if(!future.length)return;const n=future[0];setHistory(h=>[...h,wf]);setFuture(f=>f.slice(1));setWf(n);};
+
+  const onMouseDownNode=useCallback((e,nodeId)=>{
+    e.stopPropagation();setSel(nodeId);setSelEdge(null);
+    const node=dsl.nodes.find(n=>n.id===nodeId);
+    setDragId(nodeId);setDragOff({x:e.clientX-node.x*zoom-pan.x,y:e.clientY-node.y*zoom-pan.y});
+  },[dsl.nodes,zoom,pan]);
+
+  const onMouseMove=useCallback((e)=>{
+    if(dragId){
+      const nx=(e.clientX-dragOff.x-pan.x)/zoom;
+      const ny=(e.clientY-dragOff.y-pan.y)/zoom;
+      setWf(w=>({...w,nodes:(w.nodes||[]).map(n=>n.id===dragId?{...n,x:Math.max(0,nx),y:Math.max(0,ny)}:n)}));
+    }
+    if(panStart){setPan(p=>({x:p.x+(e.clientX-panStart.x),y:p.y+(e.clientY-panStart.y)}));setPanStart({x:e.clientX,y:e.clientY});}
+    if(connecting){
+      const r=canvasRef.current?.getBoundingClientRect();
+      if(r) setConnecting(c=>({...c,x:e.clientX-r.left,y:e.clientY-r.top}));
+    }
+  },[dragId,dragOff,pan,zoom,panStart,connecting]);
+
+  const onMouseUp=useCallback(()=>{
+    if(dragId){pushHistory(wf);setDragId(null);}
+    setPanStart(null);
+    setConnecting(null);
+  },[dragId,wf,pushHistory]);
+  const onCanvasDown=(e)=>{if(e.target===canvasRef.current||e.target.tagName==='svg'||e.target.tagName==='path'){setSel(null);setPanStart({x:e.clientX,y:e.clientY});}};
+  const onWheel=useCallback((e)=>{e.preventDefault();setZoom(z=>Math.min(2,Math.max(0.3,z*(e.deltaY>0?.9:1.1))));},[]);
+  useEffect(()=>{const c=canvasRef.current;if(c)c.addEventListener('wheel',onWheel,{passive:false});return()=>{if(c)c.removeEventListener('wheel',onWheel);};},[onWheel]);
+
+  const save=async()=>{
+    try{
+      const payload={name:wf.name||'Workflow',description:wf.description||'',dsl:{nodes:wf.nodes||[],edges:wf.edges||[]},execution_mode:wf.execution_mode||'manual'};
+      let saved;
+      if(wf.id){
+        saved=await api(`/workflows/${wf.id}`,{method:'PUT',body:JSON.stringify(payload)});
+      } else {
+        saved=await api('/workflows',{method:'POST',body:JSON.stringify(payload)});
+      }
+      setWf(w=>({...w,...saved}));
+      addToast('success','Workflow saved ✓');
+    }catch(e){addToast('error',`Save failed: ${e.message}`);}
+  };
+
+  const execute=async()=>{
+    if(!wf.id){addToast('error','Save the workflow first');return;}
+    setRunning(true);setLiveLog('Starting execution…\n');setExecStatus({});
+    try{
+      const res=await api(`/executions/${wf.id}/run`,{method:'POST',body:JSON.stringify({triggered_by:'manual'})});
+      const rid=res.run_id;setRunId(rid);
+      addToast('info',`Run ${rid} queued — watching live…`);
+
+      // Open WebSocket for live updates
+      if(wsRef.current) wsRef.current.close();
+      const wsProto=window.location.protocol==="https:"?"wss:":"ws:"; const wsUrl=`${wsProto}//${window.location.host}/ws/execution/${rid}`;
+      const ws=new WebSocket(wsUrl);
+      wsRef.current=ws;
+
+      ws.onmessage=(e)=>{
+        const ev=JSON.parse(e.data);
+        if(ev.type==='node_update'){
+          setExecStatus(s=>({...s,[ev.node_id]:ev.status}));
+          if(ev.log) setLiveLog(l=>l+ev.log+'\n');
+        } else if(ev.type==='run_complete'){
+          setRunning(false);
+          addToast(ev.status==='success'?'success':'error',`Run ${rid}: ${ev.status} (${(ev.duration||0).toFixed(1)}s)`);
+          ws.close();
+        } else if(ev.type==='error'){
+          setLiveLog(l=>l+`[ERROR] ${ev.message}\n`);
+          setRunning(false);
+        }
+      };
+      ws.onerror=()=>{addToast('error','WebSocket connection failed');setRunning(false);};
+      ws.onclose=()=>setRunning(false);
+    }catch(e){
+      addToast('error',`Execute failed: ${e.message}`);
+      setRunning(false);
+    }
+  };
+
+  const addNode=(type)=>{
+    const id='n'+Date.now();
+    const cfg=NC[type];
+    pushHistory(wf);
+    setWf(w=>({...w,nodes:[...(w.nodes||[]),{id,type,x:200+Math.random()*250,y:100+Math.random()*200,title:`New ${cfg.lbl}`,props:{}}]}));
+    setSel(id);setShowPalette(false);
+  };
+
+  const deleteNode=(id)=>{
+    pushHistory(wf);
+    setWf(w=>({...w,nodes:(w.nodes||[]).filter(n=>n.id!==id),edges:(w.edges||[]).filter(e=>e.from!==id&&e.to!==id)}));
+    setSel(null);addToast('info','Node deleted');
+  };
+
+  const updateProp=(nodeId,key,val)=>{
+    if(key==='__title'){
+      setWf(w=>({...w,nodes:(w.nodes||[]).map(n=>n.id===nodeId?{...n,title:val}:n)}));
+    } else {
+      setWf(w=>({...w,nodes:(w.nodes||[]).map(n=>n.id===nodeId?{...n,props:{...n.props,[key]:val}}:n)}));
+    }
+  };
+
+  const exportPytest=async(mode='run')=>{
+    if(!wf.id){addToast('error','Save the workflow first');return;}
+    const safeName=(wf.name||'wf').toLowerCase().replace(/\s+/g,'_');
+    try{
+      if(mode==='run'){
+        const res=await fetch(`/api/pytest/generate-from-run`,{
+          method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+          body:JSON.stringify({workflow_id:wf.id}),
+        });
+        if(res.status===404){addToast('info','No executions yet — using DSL mode.');exportPytest('dsl');return;}
+        if(!res.ok) throw new Error(await res.text());
+        const code=await res.text();
+        const blob=new Blob([code],{type:'text/plain'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download=`test_${safeName}_run_powered.py`;a.click();
+        addToast('success','✅ Run-powered PyTest! Assertions reference real execution data.');
+        return;
+      }
+      // DSL fallback
+      const res=await fetch(`/api/pytest/generate`,{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({workflow_dsl:wf.dsl||{nodes:wf.nodes||[],edges:wf.edges||[]},workflow_id:wf.id}),
+      });
+      const code=await res.text();
+      const blob=new Blob([code],{type:'text/plain'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=`test_${safeName}.py`;a.click();
+      addToast('success','PyTest exported (DSL mode).');
+    }catch(e){addToast('error',`Export failed: ${e.message}`);}
+  };
+
+  const exportPytestZip=async()=>{
+    if(!wf.id){addToast('error','Save the workflow first');return;}
+    const safeName=(wf.name||'wf').toLowerCase().replace(/\s+/g,'_');
+    try{
+      const res=await fetch(`/api/pytest/generate-zip`,{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+        body:JSON.stringify({workflow_id:wf.id}),
+      });
+      if(!res.ok) throw new Error(await res.text());
+      const blob=await res.blob();
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download=`flowforge_${safeName}_tests.zip`;a.click();
+      addToast('success','⊞ Full CI package: test + conftest + .env + GitHub Actions');
+    }catch(e){addToast('error',`ZIP export failed: ${e.message}`);}
+  };
+
+  const nodes=dsl.nodes||[];const edges=dsl.edges||[];
+
+  return <div className="wf-layout">
+    <div className="canvas-area">
+      <div className="canvas-tb">
+        <button className="ctb" onClick={()=>setShowPalette(s=>!s)}>+ Add Node</button>
+        <div className="ct-sep"/>
+        <button className="ctb" onClick={undo} disabled={!history.length}>Undo</button>
+        <button className="ctb" onClick={redo} disabled={!future.length}>Redo</button>
+        <div className="ct-sep"/>
+        <button className="ctb" onClick={save}>Save</button>
+        <button className={`ctb ${running?'active':''}`} onClick={execute} disabled={running}>
+          {running?'Running…':'Execute'}
+        </button>
+        <div className="ct-sep"/>
+        <button className="ctb" onClick={()=>exportPytest('run')}>Export PyTest</button>
+        <button className="ctb" onClick={exportPytestZip} title="Download full CI zip">Export ZIP</button>
+        {runId&&<button className="ctb" onClick={()=>{window.open(`/api/executions/${runId}/logs`,'_blank');}}>View Logs</button>}
+        <div className="ct-sep"/>
+        <button className="ctb" onClick={()=>{setPan({x:0,y:0});setZoom(1);}}>Reset View</button>
+        <button className="ctb" onClick={()=>setShowSettings(true)}>Settings</button>
+      </div>
+      {showSettings&&wf.id&&<WorkflowSettingsModal wf={wf} api={api} addToast={addToast}
+        onClose={()=>setShowSettings(false)} onSave={updated=>setWf(w=>({...w,...updated}))}
+        workflows={workflows||[]}/>}
+      {showPalette&&(
+        <div className="palette">
+          <div className="pal-lbl">Add Node</div>
+          {Object.entries(NC).map(([type,cfg])=>(
+            <div key={type} className="pal-item" onClick={()=>addNode(type)}>
+              <div className="pal-ico" style={{background:cfg.bg,border:`1px solid ${cfg.bd}`}}>{cfg.icon}</div>
+              <span>{cfg.lbl}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="canvas" ref={canvasRef}
+        onMouseDown={onCanvasDown} onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+        <svg className="edges-svg">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="var(--border-hi)"/>
+            </marker>
+            <marker id="arr-ok" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="var(--green)"/>
+            </marker>
+            <marker id="arr-true" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="var(--green)"/>
+            </marker>
+            <marker id="arr-false" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="var(--red)"/>
+            </marker>
+          </defs>
+          {edges.map((e,i)=>{
+            const fn=nodes.find(n=>n.id===e.from);const tn=nodes.find(n=>n.id===e.to);
+            if(!fn||!tn) return null;
+            const fx=fn.x*zoom+185*zoom+pan.x,fy=fn.y*zoom+42*zoom+pan.y;
+            const tx=tn.x*zoom+pan.x,ty=tn.y*zoom+42*zoom+pan.y;
+            const mx=(fx+tx)/2;
+            const ok=execStatus[e.from]==='success';
+            const run=execStatus[e.from]==='running';
+            const skipped=execStatus[e.to]==='skipped';
+            // Branch-label colouring
+            const branchColor=e.branch==='true'?'var(--green)':e.branch==='false'?'var(--red)':null;
+            const stroke=skipped?'var(--t3)':ok?'var(--green)':run?'var(--yellow)':branchColor||'var(--border-hi)';
+            const markerId=e.branch==='true'?'arr-true':e.branch==='false'?'arr-false':ok?'arr-ok':'arr';
+            const lx=(fx+tx)/2, ly=(fy+ty)/2;
+            const isSelEdge=selEdge===i;
+            return <g key={i} style={{cursor:'pointer'}} onClick={(ev)=>selectEdge(i,ev)}>
+              {/* Invisible fat hit area for easy clicking */}
+              <path d={`M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}`}
+                stroke="transparent" strokeWidth={12} fill="none"/>
+              <path
+                d={`M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}`}
+                stroke={isSelEdge?'var(--accent)':stroke}
+                strokeWidth={isSelEdge?2.5:run?2.5:skipped?1:1.5} fill="none"
+                strokeDasharray={run?'6 4':skipped?'4 3':'none'}
+                markerEnd={`url(#${markerId})`}
+                opacity={skipped?0.35:0.85}/>
+              {e.branch&&<g>
+                <rect x={lx-16} y={ly-9} width={32} height={16} rx={4}
+                  fill={e.branch==='true'?'rgba(0,200,100,.22)':'rgba(255,80,80,.22)'}
+                  stroke={isSelEdge?'var(--accent)':e.branch==='true'?'var(--green)':'var(--red)'} strokeWidth={1}/>
+                <text x={lx} y={ly+4} textAnchor="middle" fontSize={9} fontWeight={700}
+                  fill={isSelEdge?'var(--accent)':e.branch==='true'?'var(--green)':'var(--red)'}
+                  fontFamily="var(--mono)">
+                  {e.branch==='true'?'TRUE':'FALSE'}
+                </text>
+              </g>}
+            </g>;
+          })}
+          {/* In-progress connection drag line */}
+          {connecting&&<line
+            x1={connecting.startX} y1={connecting.startY}
+            x2={connecting.x} y2={connecting.y}
+            stroke="var(--accent)" strokeWidth={1.5} strokeDasharray="5 3"
+            style={{pointerEvents:'none'}}/>
+          }
+        </svg>
+        {nodes.map(node=>{
+          const cfg=NC[node.type]||NC.trigger;
+          const status=execStatus[node.id]||'idle';
+          return <div key={node.id}
+            className={`wf-node ${sel===node.id?'sel':''}`}
+            style={{left:node.x*zoom+pan.x,top:node.y*zoom+pan.y,borderColor:sel===node.id?cfg.bd:undefined,transform:`scale(${zoom})`,transformOrigin:'top left'}}
+            onMouseDown={e=>onMouseDownNode(e,node.id)}>
+            <div className="node-hdr">
+              <div className="node-ico" style={{background:cfg.bg}}>{cfg.icon}</div>
+              <div className="node-title">{node.title}</div>
+              <div className={`sdot sd-${status}`}/>
+            </div>
+            <div className="node-body">
+              {Object.entries(node.props||{}).slice(0,2).map(([k,v])=>(
+                <div key={k} className="node-prop">{k}: <span>{String(v).slice(0,22)}</span></div>
+              ))}
+            </div>
+            <div className="port port-in"
+              style={{cursor:connecting?'crosshair':'default'}}
+              onMouseUp={()=>finishConnect(node.id)}/>
+            <div className="port port-out"
+              title="Drag to connect"
+              style={{cursor:'crosshair'}}
+              onMouseDown={e=>startConnect(e,node.id)}/>
+          </div>;
+        })}
+      </div>
+      <div className="zoom-badge">{Math.round(zoom*100)}%</div>
+      {liveLog&&(
+        <div style={{position:'absolute',bottom:40,left:14,right:14,maxHeight:180,zIndex:20}}>
+          <div style={{fontSize:10,color:'var(--t3)',fontFamily:'var(--mono)',marginBottom:3}}>LIVE EXECUTION LOG</div>
+          <div className="log-panel">
+            {liveLog.split('\n').map((line,i)=>{
+              const cls=line.includes('[OK]')?'log-ok':line.includes('[ERROR]')?'log-err':line.includes('[WARN]')?'log-warn':'log-info';
+              return <div key={i} className={cls}>{line}</div>;
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+    <div className="props-panel">
+      {/* ── Edge selected ── */}
+      {selEdge!==null&&!selNode&&(()=>{
+        const e=(wf.edges||[])[selEdge];
+        if(!e) return null;
+        const fn=dsl.nodes.find(n=>n.id===e.from);
+        const tn=dsl.nodes.find(n=>n.id===e.to);
+        const fromIsIf=fn?.type==='if';
+        return <>
+          <div className="pp-hdr">
+            <span className="pp-title">Edge Properties</span>
+            <button className="btn btn-danger btn-sm" onClick={()=>deleteEdge(selEdge)}>Delete Edge</button>
+          </div>
+          <div style={{padding:'14px'}}>
+            <div style={{fontSize:11,color:'var(--t3)',marginBottom:4}}>Connection</div>
+            <div style={{fontSize:12,color:'var(--t1)',marginBottom:12,padding:'6px 8px',background:'var(--surface2)',borderRadius:6}}>
+              <span style={{color:'var(--accent)'}}>{fn?.title||e.from}</span>
+              <span style={{color:'var(--t3)',margin:'0 6px'}}>→</span>
+              <span style={{color:'var(--t1)'}}>{tn?.title||e.to}</span>
+            </div>
+            <div style={{fontSize:11,color:'var(--t3)',marginBottom:6}}>
+              Branch label {!fromIsIf&&<span style={{color:'var(--yellow)'}}>(source is not an IF node)</span>}
+            </div>
+            <div style={{display:'flex',gap:6}}>
+              <button
+                className={`btn btn-sm ${!e.branch?'btn-primary':'btn-ghost'}`}
+                onClick={()=>setEdgeBranch(selEdge,'')}
+                title="Always runs — no branch condition">
+                Always
+              </button>
+              <button
+                className={`btn btn-sm ${e.branch==='true'?'btn-primary':'btn-ghost'}`}
+                style={{color:e.branch==='true'?undefined:'var(--green)',borderColor:'var(--green)'}}
+                onClick={()=>setEdgeBranch(selEdge,'true')}
+                title="Run only when IF condition is TRUE">
+                ✓ TRUE
+              </button>
+              <button
+                className={`btn btn-sm ${e.branch==='false'?'btn-primary':'btn-ghost'}`}
+                style={{color:e.branch==='false'?undefined:'var(--red)',borderColor:'var(--red)'}}
+                onClick={()=>setEdgeBranch(selEdge,'false')}
+                title="Run only when IF condition is FALSE">
+                ✗ FALSE
+              </button>
+            </div>
+            {fromIsIf&&<div style={{marginTop:12,fontSize:11,color:'var(--t3)',lineHeight:1.5}}>
+              <strong style={{color:'var(--t2)'}}>How it works:</strong><br/>
+              TRUE branch runs when the IF condition passes.<br/>
+              FALSE branch runs when it fails.<br/>
+              Nodes on the suppressed branch are skipped.
+            </div>}
+            {!fromIsIf&&<div style={{marginTop:12,fontSize:11,color:'var(--yellow)',lineHeight:1.5}}>
+              ⚠ Branch labels only have effect on edges coming out of an IF node.
+            </div>}
+          </div>
+          <div style={{padding:'12px 14px',borderTop:'1px solid var(--border)'}}>
+            <button className="btn btn-primary" style={{width:'100%'}} onClick={save}>Save Changes</button>
+          </div>
+        </>;
+      })()}
+      {/* ── Node selected ── */}
+      {selNode&&<>
+        <div className="pp-hdr">
+          <span className="pp-title">Properties</span>
+          <button className="btn btn-danger btn-sm" onClick={()=>deleteNode(sel)}>Delete</button>
+        </div>
+        <NodeProps node={selNode} onChange={updateProp} api={api} addToast={addToast}/>
+        <div style={{padding:'12px 14px',borderTop:'1px solid var(--border)'}}>
+          <button className="btn btn-primary" style={{width:'100%'}} onClick={save}>Save Changes</button>
+        </div>
+      </>}
+      {/* ── Nothing selected ── */}
+      {!selNode&&selEdge===null&&(
+        <div className="pp-empty">
+          <div style={{fontSize:36,opacity:.2,marginBottom:4}}>◈</div>
+          <div style={{fontSize:13,textAlign:'center',lineHeight:1.6}}>
+            Click a <strong>node</strong> to edit props.<br/>
+            Click an <strong>edge</strong> to set branch label.<br/>
+            Drag <strong>port →</strong> to connect nodes.
+          </div>
+        </div>
+      )}
+    </div>
+  </div>;
+}
+
+function NodeProps({node,onChange,api,addToast}){
+  const cfg=NC[node.type]||NC.trigger;
+  const schema=SCHEMAS[node.type]||[];
+  const [creds,setCreds]=useState([]);
+  const [wfs,setWfs]=useState([]);
+  useEffect(()=>{
+    api('/credentials').then(d=>setCreds(d.credentials||[])).catch(()=>{});
+    api('/workflows').then(d=>setWfs(d.workflows||[])).catch(()=>{});
+  },[]);
+
+  const isCode=node.type==='code';
+  const isCallWf=node.type==='call_workflow';
+  const needsCred=!['set_variable','get_variable','code','call_workflow','wait','if','trigger','webhook'].includes(node.type);
+
+  return <div className="pp-body">
+    <div className="type-chip" style={{background:cfg.bg,border:`1px solid ${cfg.bd}`,color:cfg.bd}}>{cfg.icon} {cfg.lbl}</div>
+    <div className="prop-grp">
+      <div className="prop-grp-lbl">General</div>
+      <div className="prop-field">
+        <div className="prop-lbl">Node Title</div>
+        <input className="inp" defaultValue={node.title} onBlur={e=>onChange(node.id,'__title',e.target.value)}/>
+      </div>
+      {needsCred&&<div className="prop-field">
+        <div className="prop-lbl">Credential</div>
+        <select className="sel" defaultValue={node.props?.credential||''} onChange={e=>onChange(node.id,'credential',e.target.value)}>
+          <option value="">— None —</option>
+          {creds.map(c=><option key={c.id} value={c.name}>{c.name} ({c.service_type})</option>)}
+        </select>
+      </div>}
+    </div>
+    <div className="prop-grp">
+      <div className="prop-grp-lbl">Configuration</div>
+      {schema.map(field=>{
+        // Special: call_workflow workflow picker
+        if(isCallWf&&field.k==='workflow_id') return (
+          <div key={field.k} className="prop-field">
+            <div className="prop-lbl">Sub-Workflow</div>
+            <select className="sel" defaultValue={node.props?.[field.k]||''} onChange={e=>onChange(node.id,field.k,e.target.value)}>
+              <option value="">— Select workflow —</option>
+              {wfs.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}
+            </select>
+            <div className="hint">Select the workflow to call inline</div>
+          </div>
+        );
+        return (
+          <div key={field.k} className="prop-field">
+            <div className="prop-lbl">{field.l}</div>
+            {(node.type==='trigger'&&field.k==='cron')
+              ? <CronBuilder value={node.props?.[field.k]??field.d??''} onChange={v=>onChange(node.id,field.k,v)}/>
+              : field.t==='textarea'
+              ? <textarea className="ta" style={isCode&&field.k==='code'?{minHeight:120,fontFamily:'var(--mono)',fontSize:12}:{}}
+                  defaultValue={node.props?.[field.k]??field.d??''} onChange={e=>onChange(node.id,field.k,e.target.value)}/>
+              : field.t==='select'
+              ? <select className="sel" defaultValue={node.props?.[field.k]??field.opts?.[0]} onChange={e=>onChange(node.id,field.k,e.target.value)}>
+                  {(field.opts||[]).map(o=><option key={o}>{o}</option>)}
+                </select>
+              : <input className="inp" type={field.t||'text'} defaultValue={node.props?.[field.k]??field.d??''} onChange={e=>onChange(node.id,field.k,field.t==='number'?Number(e.target.value):e.target.value)}/>
+            }
+            {(String(node.props?.[field.k]||field.d||'')).includes('{{')&&<div className="hint">→ Expression — references upstream node output or $var.key</div>}
+            {field.hint&&<div className="hint" style={{color:'var(--accent)',opacity:.8}}>→ {field.hint}</div>}
+          </div>
+        );
+      })}
+      {isCode&&<div style={{background:'rgba(182,109,255,.07)',border:'1px solid rgba(182,109,255,.2)',borderRadius:7,padding:'8px 11px',fontSize:11,color:'var(--t2)',marginTop:6}}>
+        <div style={{fontWeight:700,marginBottom:4,color:'var(--purple)'}}>Available in code:</div>
+        <div className="mono">input_data</div><div style={{color:'var(--t3)',fontSize:10,marginBottom:3}}>— dict of all upstream node outputs</div>
+        <div className="mono">output</div><div style={{color:'var(--t3)',fontSize:10,marginBottom:3}}>— dict — write results here</div>
+        <div className="mono">log(msg)</div><div style={{color:'var(--t3)',fontSize:10}}>— NodeLogger.info()</div>
+      </div>}
+    </div>
+    <div className="prop-grp">
+      <div className="prop-grp-lbl">On Failure</div>
+      <div className="prop-field">
+        <div className="prop-lbl">Action</div>
+        <select className="sel" defaultValue={node.props?.on_failure||'stop'} onChange={e=>onChange(node.id,'on_failure',e.target.value)}>
+          <option value="stop">Stop workflow</option>
+          <option value="continue">Continue to next</option>
+        </select>
+      </div>
+      <div className="prop-field">
+        <div className="prop-lbl">Retries</div>
+        <input className="inp" type="number" min="0" max="5" defaultValue={node.props?.retries??0} onChange={e=>onChange(node.id,'retries',Number(e.target.value))}/>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── History Page ── */
+function HistoryPage({api,addToast,workflows}){
+  const [runs,setRuns]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [filter,setFilter]=useState('');
+  const [statusFilter,setStatusFilter]=useState('all');
+  const [selRun,setSelRun]=useState(null);
+  const [showBulk,setShowBulk]=useState(false);
+  const [bulkSel,setBulkSel]=useState([]);
+  const [bulkRunning,setBulkRunning]=useState(false);
+  const [bulkResults,setBulkResults]=useState([]);
+
+  const load=async()=>{
+    setLoading(true);
+    try{const d=await api('/executions/');setRuns(d.executions||[]);}
+    catch(e){addToast('error',`Load failed: ${e.message}`);}
+    finally{setLoading(false);}
+  };
+  useEffect(()=>{load();},[]);
+
+  const runBulk=async()=>{
+    if(bulkSel.length===0){addToast('error','Select at least one workflow');return;}
+    setBulkRunning(true);setBulkResults([]);
+    try{
+      const d=await api('/executions/bulk',{method:'POST',body:JSON.stringify({workflow_ids:bulkSel,triggered_by:'bulk'})});
+      setBulkResults(d.runs||[]);
+      addToast('success',`${d.queued} workflow(s) queued`);
+      setTimeout(()=>{load();},2000);
+    }catch(e){addToast('error',e.message);}
+    finally{setBulkRunning(false);}
+  };
+
+  const filtered=runs.filter(r=>
+    (r.workflow_name||'').toLowerCase().includes(filter.toLowerCase())&&
+    (statusFilter==='all'||r.status===statusFilter)
+  );
+  const stats={total:runs.length,success:runs.filter(r=>r.status==='success').length,failed:runs.filter(r=>r.status==='failed').length,running:runs.filter(r=>r.status==='running').length};
+
+  if(loading) return <div className="loading">⏳ Loading execution history…</div>;
+
+  return <div className="page-content">
+    <div className="stats-row">
+      {[['Total Runs',stats.total,'var(--t1)','All time'],['Successful',stats.success,'var(--green)',`${stats.total?Math.round(stats.success/stats.total*100):0}% rate`],['Failed',stats.failed,'var(--red)','Needs attention'],['Running',stats.running,'var(--yellow)','In progress']].map(([l,v,c,s])=>(
+        <div key={l} className="stat-card">
+          <div className="stat-lbl">{l}</div>
+          <div className="stat-val" style={{color:c}}>{v}</div>
+          <div className="stat-sub">{s}</div>
+        </div>
+      ))}
+    </div>
+    <div className="filter-row">
+      <input className="filter-inp" placeholder="⊙ Search…" value={filter} onChange={e=>setFilter(e.target.value)}/>
+      <select className="sel-filter" value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}>
+        <option value="all">All Status</option><option value="success">Success</option><option value="failed">Failed</option><option value="running">Running</option>
+      </select>
+      <button className="btn btn-ghost btn-sm" onClick={load}>↺ Refresh</button>
+      {workflows&&workflows.length>0&&<button className="btn btn-primary btn-sm" onClick={()=>{setShowBulk(true);setBulkSel([]);setBulkResults([]);}}>Bulk Run</button>}
+    </div>
+
+    {showBulk&&(
+      <div style={{background:'var(--surface)',border:'1px solid var(--accent)',borderRadius:10,padding:'14px 18px',marginBottom:14}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <div style={{fontWeight:700,fontSize:13}}>▶▶ Bulk Run — select workflows to fire concurrently</div>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setShowBulk(false)}>✕</button>
+        </div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:7,marginBottom:12}}>
+          {(workflows||[]).map(w=>(
+            <div key={w.id}
+              style={{padding:'5px 12px',borderRadius:7,cursor:'pointer',fontSize:12,fontWeight:600,
+                border:`1px solid ${bulkSel.includes(w.id)?'var(--accent)':'var(--border)'}`,
+                background:bulkSel.includes(w.id)?'var(--adim)':'var(--surface2)',
+                color:bulkSel.includes(w.id)?'var(--accent)':'var(--t2)'}}
+              onClick={()=>setBulkSel(s=>s.includes(w.id)?s.filter(x=>x!==w.id):[...s,w.id])}>
+              {w.name}
+            </div>
+          ))}
+        </div>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setBulkSel((workflows||[]).map(w=>w.id))}>Select All</button>
+          <button className="btn btn-ghost btn-sm" onClick={()=>setBulkSel([])}>Clear</button>
+          <button className="btn btn-primary" disabled={bulkRunning||bulkSel.length===0} onClick={runBulk}>
+            {bulkRunning?'Running…':`▶ Run ${bulkSel.length} workflow${bulkSel.length===1?'':'s'}`}
+          </button>
+        </div>
+        {bulkResults.length>0&&(
+          <div style={{marginTop:12,display:'flex',flexDirection:'column',gap:5}}>
+            <div style={{fontSize:11,color:'var(--t3)',fontWeight:700,textTransform:'uppercase',letterSpacing:'1px'}}>Queued runs</div>
+            {bulkResults.map(r=>(
+              <div key={r.run_id||r.workflow_id} style={{display:'flex',justifyContent:'space-between',fontSize:12,padding:'4px 8px',background:'var(--surface2)',borderRadius:5}}>
+                <span>{r.workflow_name||r.workflow_id}</span>
+                <span className="mono" style={{color:'var(--t3)'}}>{r.run_id||r.reason}</span>
+                <span style={{color:r.status==='skipped'?'var(--t3)':'var(--accent)'}}>{r.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+    <div className="tbl-card">
+      <div className="tbl-hdr"><span className="tbl-title">Execution History</span><span className="tag">{filtered.length} runs</span></div>
+      <table>
+        <thead><tr><th>Workflow</th><th>Run ID</th><th>Status</th><th>Started</th><th>Duration</th><th>Actions</th></tr></thead>
+        <tbody>
+          {filtered.length===0&&<tr><td colSpan={6} style={{textAlign:'center',color:'var(--t3)',padding:32}}>No executions found.</td></tr>}
+          {filtered.map(r=>(
+            <tr key={r.id}>
+              <td style={{fontWeight:600}}>{r.workflow_name}</td>
+              <td><span className="mono">{r.id}</span></td>
+              <td><span className={`badge badge-${r.status}`}>{r.status}</span></td>
+              <td><span className="mono">{r.started_at?new Date(r.started_at).toLocaleString():'-'}</span></td>
+              <td><span className="mono">{r.duration_seconds?`${r.duration_seconds.toFixed(1)}s`:'-'}</span></td>
+              <td><div style={{display:'flex',gap:5}}>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setSelRun(r)}>▤ Logs</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>{window.open(`/api/executions/${r.id}/logs`,'_blank');}}>Logs</button>
+              </div></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    {selRun&&<ExecModal runId={selRun.id} api={api} onClose={()=>setSelRun(null)} addToast={addToast}/>}
+  </div>;
+}
+
+function ExecModal({runId,api,onClose,addToast}){
+  const [run,setRun]=useState(null);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    api(`/executions/${runId}`).then(d=>{setRun(d);setLoading(false);}).catch(e=>{addToast('error',e.message);onClose();});
+  },[runId]);
+
+  if(loading) return <div className="overlay"><div className="modal modal-sm"><div className="loading">Loading…</div></div></div>;
+  if(!run) return null;
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal">
+      <div className="mhdr">
+        <div>
+          <div className="mtitle">Execution: {run.id}</div>
+          <div style={{fontSize:11,color:'var(--t3)',marginTop:2,fontFamily:'var(--mono)'}}>{run.workflow_id}</div>
+        </div>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}>
+          <span className={`badge badge-${run.status}`}>{run.status}</span>
+          <button className="mclose" onClick={onClose}>×</button>
+        </div>
+      </div>
+      <div className="mbody">
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:18}}>
+          {[['Duration',run.duration_seconds?`${run.duration_seconds.toFixed(1)}s`:'-'],['Started',run.started_at?new Date(run.started_at).toLocaleTimeString():'-'],['Triggered By',run.triggered_by||'-']].map(([k,v])=>(
+            <div key={k} style={{background:'var(--raised)',border:'1px solid var(--border)',borderRadius:7,padding:'9px 12px'}}>
+              <div style={{fontSize:10,color:'var(--t3)',marginBottom:3,fontFamily:'var(--mono)'}}>{k.toUpperCase()}</div>
+              <div style={{fontSize:12.5,fontWeight:600}}>{v}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{fontWeight:700,marginBottom:12,fontSize:13}}>Node Timeline</div>
+        {(run.node_runs||[]).map((nr,i)=>{
+          const cfg=NC[nr.node_type]||NC.trigger;
+          const lines=(nr.log||'').split('\n').filter(Boolean);
+          return <div key={i} className="tl-item">
+            <div className="tl-dot-col">
+              <div className="tl-dot" style={{background:nr.status==='success'?'var(--green)':nr.status==='failed'?'var(--red)':'var(--t3)'}}/>
+              {i<run.node_runs.length-1&&<div className="tl-line"/>}
+            </div>
+            <div className="tl-content" style={{marginBottom:10}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                <div style={{fontWeight:600,fontSize:13}}>{cfg.icon} {nr.node_title}</div>
+                <div style={{display:'flex',gap:7,alignItems:'center'}}>
+                  {nr.attempt>1&&<span className="tag">attempt {nr.attempt}</span>}
+                  <span className="mono" style={{color:'var(--t3)',fontSize:11}}>{nr.duration_seconds?`${nr.duration_seconds.toFixed(2)}s`:''}</span>
+                  <span className={`badge badge-${nr.status}`}>{nr.status}</span>
+                </div>
+              </div>
+              {lines.length>0&&(
+                <div className="log-panel">
+                  {lines.map((line,li)=>{
+                    const cls=line.includes('[OK]')?'log-ok':line.includes('[ERROR]')?'log-err':line.includes('[WARN]')?'log-warn':'log-info';
+                    return <div key={li} className={cls}>{line}</div>;
+                  })}
+                </div>
+              )}
+              {nr.error&&<div style={{marginTop:6,padding:'6px 10px',background:'var(--rdim)',border:'1px solid rgba(255,77,106,.25)',borderRadius:5,fontSize:11.5,color:'var(--red)',fontFamily:'var(--mono)'}}>{nr.error}</div>}
+            </div>
+          </div>;
+        })}
+      </div>
+      <div className="mfoot">
+        <button className="btn btn-ghost btn-sm" onClick={()=>window.open(`/api/executions/${run.id}/logs`,'_blank')}>Full Log</button>
+        <button className="btn btn-secondary btn-sm" onClick={onClose}>Close</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Credentials Page ── */
+function CredentialsPage({api,addToast}){
+  const [creds,setCreds]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [showModal,setShowModal]=useState(false);
+  const [editCred,setEditCred]=useState(null);
+  const [selType,setSelType]=useState('airflow');
+  const [formName,setFormName]=useState('');
+  const [formFields,setFormFields]=useState({});
+  const [saving,setSaving]=useState(false);
+
+  const SVCS=[
+    {type:'airflow',icon:'◎',lbl:'Airflow',fields:['base_url','username','password']},
+    {type:'mssql',icon:'▤',lbl:'MSSQL',fields:['server','database','username','password']},
+    {type:'http',icon:'⊞',lbl:'HTTP',fields:['base_url','bearer_token','api_key']},
+    {type:'s3',icon:'◫',lbl:'S3',fields:['region','access_key_id','secret_access_key']},
+    {type:'azure',icon:'⬡',lbl:'Azure',fields:['account_name','container','storage_key']},
+    {type:'sftp',icon:'◧',lbl:'SFTP',fields:['host','username','password','port']},
+  ];
+
+  const load=async()=>{
+    try{const d=await api('/credentials');setCreds(d.credentials||[]);}
+    catch(e){addToast('error',`Load failed: ${e.message}`);}
+    finally{setLoading(false);}
+  };
+  useEffect(()=>{load();},[]);
+
+  const openAdd=()=>{setEditCred(null);setFormName('');setFormFields({});setSelType('airflow');setShowModal(true);};
+  const openEdit=(c)=>{setEditCred(c);setSelType(c.service_type||'airflow');setFormName(c.name);setShowModal(true);};
+
+  const save=async()=>{
+    setSaving(true);
+    try{
+      const payload={name:formName||'NEW_CRED',service_type:selType,fields:formFields};
+      if(editCred){
+        await api(`/credentials/${editCred.id}`,{method:'PUT',body:JSON.stringify(payload)});
+        addToast('success','Credential updated');
+      } else {
+        await api('/credentials',{method:'POST',body:JSON.stringify(payload)});
+        addToast('success','Credential saved (AES-256 encrypted)');
+      }
+      setShowModal(false);load();
+    }catch(e){addToast('error',`Save failed: ${e.message}`);}
+    finally{setSaving(false);}
+  };
+
+  const del=async(id)=>{
+    if(!confirm('Delete this credential?')) return;
+    try{await api(`/credentials/${id}`,{method:'DELETE'});addToast('info','Deleted');load();}
+    catch(e){addToast('error',e.message);}
+  };
+
+  const test=async(c)=>{
+    addToast('info',`Testing ${c.name}…`);
+    try{
+      const res=await api(`/credentials/${c.id}/test`,{method:'POST'});
+      addToast(res.status==='ok'?'success':'error',`${c.name}: ${res.status}${res.error?` — ${res.error}`:''}`);
+    }catch(e){addToast('error',e.message);}
+  };
+
+  const currSvc=SVCS.find(s=>s.type===selType)||SVCS[0];
+  if(loading) return <div className="loading">⏳ Loading credentials…</div>;
+
+  return <div className="page-content">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+      <div>
+        <h2 style={{fontSize:22,fontWeight:800,color:'var(--t1)',letterSpacing:'-.4px'}}>Credential Vault</h2>
+        <p style={{fontSize:13,color:'var(--t3)',marginTop:3}}>AES-256-GCM encrypted. Secrets never exposed to frontend.</p>
+      </div>
+      <button className="btn btn-primary" onClick={openAdd}>+ Add Credential</button>
+    </div>
+    <div className="enc-notice">◉ All credentials encrypted at rest. Nodes reference by name — secrets never transmitted to browser.</div>
+    <div className="creds-grid">
+      {creds.map(c=>(
+        <div key={c.id} className="cred-card">
+          <div className="cred-hdr">
+            <div className="cred-icon" style={{background:'rgba(0,229,255,.1)',border:'1px solid var(--border)'}}>
+              {SVCS.find(s=>s.type===c.service_type)?.icon||'◉'}
+            </div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontWeight:700,fontSize:14}}>{c.name}</div>
+              <div style={{fontSize:11,color:'var(--t3)',fontFamily:'var(--mono)',marginTop:2}}>{(c.service_type||'').toUpperCase()}</div>
+            </div>
+          </div>
+          <div className="cred-body">
+            {Object.entries(c.masked_fields||{}).map(([k,v])=>(
+              <div key={k} className="cred-field">
+                <span className="cred-fk">{k}</span>
+                <span className="cred-fv">{String(v)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="cred-footer">
+            <button className="btn btn-ghost btn-sm" onClick={()=>test(c)}>⊕ Test</button>
+            <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(c)}>✏ Edit</button>
+            <button className="btn btn-danger btn-sm" onClick={()=>del(c.id)}>✕</button>
+          </div>
+        </div>
+      ))}
+      <div className="add-cred-card" onClick={openAdd}><div style={{fontSize:28}}>+</div><div style={{fontSize:13,fontWeight:600}}>Add New Credential</div></div>
+    </div>
+    {showModal&&(
+      <div className="overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+        <div className="modal modal-sm">
+          <div className="mhdr">
+            <div className="mtitle">{editCred?'Edit Credential':'Add Credential'}</div>
+            <button className="mclose" onClick={()=>setShowModal(false)}>×</button>
+          </div>
+          <div className="mbody">
+            {!editCred&&<>
+              <div style={{marginBottom:12}}>
+                <div className="prop-grp-lbl" style={{marginBottom:8}}>Service Type</div>
+                <div className="svc-grid">
+                  {SVCS.map(s=>(
+                    <div key={s.type} className={`svc-opt ${selType===s.type?'svc-sel':''}`} onClick={()=>setSelType(s.type)}>
+                      <div className="svc-ico">{s.icon}</div>{s.lbl}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>}
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <div className="prop-field">
+                <div className="prop-lbl">Credential Name (reference key)</div>
+                <input className="inp" placeholder="e.g. PROD_AIRFLOW" value={formName} onChange={e=>setFormName(e.target.value.toUpperCase())} style={{textTransform:'uppercase'}}/>
+              </div>
+              {currSvc.fields.map(field=>(
+                <div key={field} className="prop-field">
+                  <div className="prop-lbl">{field.replace(/_/g,' ')}</div>
+                  <input className="inp"
+                    type={field.includes('password')||field.includes('secret')||field.includes('key')?'password':'text'}
+                    placeholder={`Enter ${field.replace(/_/g,' ')}…`}
+                    onChange={e=>setFormFields(f=>({...f,[field]:e.target.value}))}/>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mfoot">
+            <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={save} disabled={saving}>◉ {saving?'Saving…':'Save Encrypted'}</button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>;
+}
+
+/* ── Variables Page ── */
+function VariablesPage({api,addToast,workflows}){
+  const [vars,setVars]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [showModal,setShowModal]=useState(false);
+  const [editVar,setEditVar]=useState(null);
+  const [form,setForm]=useState({key:'',value:'',scope:'workflow',workflow_id:'',value_type:'string',description:''});
+  const [filter,setFilter]=useState('');
+
+  const load=async()=>{
+    setLoading(true);
+    try{const d=await api('/variables/');setVars(d.variables||[]);}
+    catch(e){addToast('error',`Load failed: ${e.message}`);}
+    finally{setLoading(false);}
+  };
+  useEffect(()=>{load();},[]);
+
+  const openAdd=()=>{setEditVar(null);setForm({key:'',value:'',scope:'workflow',workflow_id:'',value_type:'auto',description:''});setShowModal(true);};
+  const openEdit=(v)=>{setEditVar(v);setForm({key:v.key,value:typeof v.value==='object'?JSON.stringify(v.value,null,2):String(v.value??''),scope:v.scope,workflow_id:v.workflow_id||'',value_type:v.value_type||'string',description:v.description||''});setShowModal(true);};
+
+  const save=async()=>{
+    try{
+      const payload={...form,value:form.value};
+      if(editVar){
+        await api(`/variables/${editVar.id}`,{method:'PUT',body:JSON.stringify({value:form.value,description:form.description,value_type:form.value_type})});
+        addToast('success','Variable updated');
+      } else {
+        await api('/variables/',{method:'POST',body:JSON.stringify(payload)});
+        addToast('success','Variable created');
+      }
+      setShowModal(false);load();
+    }catch(e){addToast('error',e.message);}
+  };
+
+  const del=async(id)=>{
+    if(!confirm('Delete this variable?')) return;
+    try{await api(`/variables/${id}`,{method:'DELETE'});addToast('info','Deleted');load();}
+    catch(e){addToast('error',e.message);}
+  };
+
+  const filtered=vars.filter(v=>v.key.toLowerCase().includes(filter.toLowerCase())||(String(v.value||'')).includes(filter));
+  const grouped={workflow:filtered.filter(v=>v.scope==='workflow'),global:filtered.filter(v=>v.scope==='global')};
+
+  if(loading) return <div className="loading">⏳ Loading variables…</div>;
+
+  const typeColor={string:'var(--t2)',number:'var(--accent)',boolean:'var(--green)',json:'var(--purple)',auto:'var(--t3)'};
+
+  return <div className="page-content">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+      <div>
+        <h2 style={{fontSize:22,fontWeight:800,color:'var(--t1)',letterSpacing:'-.4px'}}>Workflow Variables</h2>
+        <p style={{fontSize:13,color:'var(--t3)',marginTop:3}}>Persistent key-value store. Reference with <span className="mono" style={{color:'var(--accent)'}}>{'{{$var.key}}'}</span> in node props.</p>
+      </div>
+      <button className="btn btn-primary" onClick={openAdd}>+ New Variable</button>
+    </div>
+    <div style={{marginBottom:14}}>
+      <input className="filter-inp" placeholder="⊙ Filter variables…" value={filter} onChange={e=>setFilter(e.target.value)} style={{maxWidth:320}}/>
+    </div>
+    {['workflow','global'].map(scope=>(
+      <div key={scope} style={{marginBottom:20}}>
+        <div style={{fontSize:10,textTransform:'uppercase',letterSpacing:'1.2px',color:'var(--t3)',fontFamily:'var(--mono)',marginBottom:8}}>{scope} scope ({grouped[scope].length})</div>
+        {grouped[scope].length===0
+          ? <div style={{padding:'12px 16px',background:'var(--surface)',border:'1px solid var(--border)',borderRadius:8,color:'var(--t3)',fontSize:13}}>No {scope} variables.</div>
+          : <div className="tbl-card">
+              <table>
+                <thead><tr><th>Key</th><th>Value</th><th>Type</th><th>Workflow</th><th>Updated</th><th></th></tr></thead>
+                <tbody>
+                  {grouped[scope].map(v=>(
+                    <tr key={v.id}>
+                      <td><span className="mono" style={{color:'var(--accent)'}}>${v.key}</span></td>
+                      <td><span className="mono" style={{color:'var(--t1)',maxWidth:240,display:'inline-block',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{typeof v.value==='object'?JSON.stringify(v.value):String(v.value??'')}</span></td>
+                      <td><span style={{fontSize:11,color:typeColor[v.value_type]||'var(--t2)',fontFamily:'var(--mono)'}}>{v.value_type}</span></td>
+                      <td><span style={{fontSize:11,color:'var(--t3)'}}>{scope==='workflow'?(workflows.find(w=>w.id===v.workflow_id)?.name||v.workflow_id||'—'):'global'}</span></td>
+                      <td><span className="mono" style={{fontSize:11,color:'var(--t3)'}}>{new Date(v.updated_at).toLocaleDateString()}</span></td>
+                      <td><div style={{display:'flex',gap:5}}>
+                        <button className="btn btn-ghost btn-sm" onClick={()=>openEdit(v)}>✏</button>
+                        <button className="btn btn-danger btn-sm" onClick={()=>del(v.id)}>✕</button>
+                      </div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+        }
+      </div>
+    ))}
+    {showModal&&(
+      <div className="overlay" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+        <div className="modal modal-sm">
+          <div className="mhdr">
+            <div className="mtitle">{editVar?`Edit $${editVar.key}`:'New Variable'}</div>
+            <button className="mclose" onClick={()=>setShowModal(false)}>×</button>
+          </div>
+          <div className="mbody">
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {!editVar&&<>
+                <div className="prop-field">
+                  <div className="prop-lbl">Key</div>
+                  <input className="inp" placeholder="my_variable" value={form.key} onChange={e=>setForm(f=>({...f,key:e.target.value}))}/>
+                  <div className="hint">Reference as {'{{$var.my_variable}}'} in node props</div>
+                </div>
+                <div className="prop-field">
+                  <div className="prop-lbl">Scope</div>
+                  <select className="sel" value={form.scope} onChange={e=>setForm(f=>({...f,scope:e.target.value}))}>
+                    <option value="workflow">Workflow (scoped to one workflow)</option>
+                    <option value="global">Global (all workflows)</option>
+                  </select>
+                </div>
+                {form.scope==='workflow'&&<div className="prop-field">
+                  <div className="prop-lbl">Workflow</div>
+                  <select className="sel" value={form.workflow_id} onChange={e=>setForm(f=>({...f,workflow_id:e.target.value}))}>
+                    <option value="">— Select workflow —</option>
+                    {workflows.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}
+                  </select>
+                </div>}
+              </>}
+              <div className="prop-field">
+                <div className="prop-lbl">Value</div>
+                <textarea className="ta" placeholder='e.g. 42  or  "hello"  or  {"key": "val"}' value={form.value} onChange={e=>setForm(f=>({...f,value:e.target.value}))}/>
+              </div>
+              <div className="prop-field">
+                <div className="prop-lbl">Type</div>
+                <select className="sel" value={form.value_type} onChange={e=>setForm(f=>({...f,value_type:e.target.value}))}>
+                  {['auto','string','number','boolean','json'].map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="prop-field">
+                <div className="prop-lbl">Description (optional)</div>
+                <input className="inp" placeholder="What this variable is for…" value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))}/>
+              </div>
+            </div>
+          </div>
+          <div className="mfoot">
+            <button className="btn btn-ghost" onClick={()=>setShowModal(false)}>Cancel</button>
+            <button className="btn btn-primary" onClick={save}>Save Variable</button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>;
+}
+
+/* ── Workflow Settings Modal ── */
+function WorkflowSettingsModal({wf,api,addToast,onClose,onSave,workflows}){
+  const [errorWfId,setErrorWfId]=useState((wf.settings||{}).error_workflow_id||'');
+  const [tz,setTz]=useState((wf.settings||{}).timezone||'UTC');
+  const [saving,setSaving]=useState(false);
+
+  const save=async()=>{
+    setSaving(true);
+    try{
+      await api(`/workflows/${wf.id}`,{method:'PUT',body:JSON.stringify({
+        settings:{...wf.settings,error_workflow_id:errorWfId||null,timezone:tz},
+      })});
+      addToast('success','Workflow settings saved');
+      onSave({...wf,settings:{...wf.settings,error_workflow_id:errorWfId||null,timezone:tz}});
+      onClose();
+    }catch(e){addToast('error',e.message);}
+    finally{setSaving(false);}
+  };
+
+  return <div className="overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal modal-sm">
+      <div className="mhdr">
+        <div className="mtitle">⚙ Workflow Settings</div>
+        <button className="mclose" onClick={onClose}>×</button>
+      </div>
+      <div className="mbody">
+        <div className="prop-grp">
+          <div className="prop-grp-lbl">Error Handling</div>
+          <div className="prop-field">
+            <div className="prop-lbl">Error Workflow</div>
+            <select className="sel" value={errorWfId} onChange={e=>setErrorWfId(e.target.value)}>
+              <option value="">— None (fail silently) —</option>
+              {workflows.filter(w=>w.id!==wf.id).map(w=><option key={w.id} value={w.id}>{w.name}</option>)}
+            </select>
+            <div className="hint">When this workflow fails, automatically trigger the selected error-handler workflow with failure context as trigger_data.</div>
+          </div>
+        </div>
+        <div className="prop-grp">
+          <div className="prop-grp-lbl">Scheduling</div>
+          <div className="prop-field">
+            <div className="prop-lbl">Timezone</div>
+            <input className="inp" value={tz} onChange={e=>setTz(e.target.value)} placeholder="UTC"/>
+          </div>
+        </div>
+        {errorWfId&&<div style={{background:'rgba(0,214,143,.07)',border:'1px solid rgba(0,214,143,.2)',borderRadius:7,padding:'9px 13px',fontSize:12,color:'var(--green)',marginTop:4}}>
+          ✅ On failure, FlowForge will fire <strong>{workflows.find(w=>w.id===errorWfId)?.name}</strong> with error context as trigger payload.
+        </div>}
+      </div>
+      <div className="mfoot">
+        <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={save} disabled={saving}>{saving?'Saving…':'Save Settings'}</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ── Cron Builder ── */
+function CronBuilder({value, onChange}){
+  const presets=[
+    {l:'Every 15 min', v:'*/15 * * * *'},
+    {l:'Hourly',       v:'0 * * * *'},
+    {l:'Daily 6am',    v:'0 6 * * *'},
+    {l:'Daily midnight',v:'0 0 * * *'},
+    {l:'Weekly Mon 6am',v:'0 6 * * 1'},
+    {l:'Monthly 1st',  v:'0 8 1 * *'},
+    {l:'Manual',       v:'manual'},
+  ];
+  return <div style={{display:'flex',flexDirection:'column',gap:6}}>
+    <input className="inp" value={value||''} onChange={e=>onChange(e.target.value)} placeholder="*/5 * * * *"/>
+    <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:2}}>
+      {presets.map(p=>(
+        <button key={p.v} className="btn btn-ghost btn-sm"
+          style={{fontSize:10,padding:'2px 7px',background:(value===p.v)?'rgba(0,229,255,.15)':'',border:(value===p.v)?'1px solid var(--accent)':''}}
+          onClick={()=>onChange(p.v)}>{p.l}</button>
+      ))}
+    </div>
+    {value&&value!=='manual'&&<div className="hint">◷ Next: {(() => { try { return 'Scheduled (server-side cron)'; } catch(e) { return 'Invalid cron'; } })()}</div>}
+  </div>;
+}
+
+/* ── Metrics Page ── */
+function MetricsPage({api,addToast,workflows}){
+  const [summary,setSummary]=useState(null);
+  const [trend,setTrend]=useState([]);
+  const [nodes,setNodes]=useState({slowest:[],most_failed:[],by_type:[]});
+  const [wfList,setWfList]=useState([]);
+  const [selWf,setSelWf]=useState('');
+  const [wfDetail,setWfDetail]=useState(null);
+  const [days,setDays]=useState(30);
+  const [loading,setLoading]=useState(true);
+
+  const load=async(d=days)=>{
+    setLoading(true);
+    try{
+      const [s,t,n,w]=await Promise.all([
+        api(`/metrics/summary?days=${d}`),
+        api(`/metrics/trend?days=${d}`),
+        api(`/metrics/nodes?days=${d}`),
+        api(`/metrics/workflows?days=${d}`),
+      ]);
+      setSummary(s);
+      setTrend(t.trend||[]);
+      setNodes(n);
+      setWfList(w.workflows||[]);
+    }catch(err){addToast('error',`Metrics load failed: ${err.message}`);}
+    finally{setLoading(false);}
+  };
+
+  const loadWfDetail=async(id)=>{
+    if(!id){setWfDetail(null);return;}
+    try{const m=await api(`/metrics/workflows/${id}?days=${days}`);setWfDetail(m);}
+    catch(e){addToast('error',e.message);}
+  };
+
+  useEffect(()=>{load();},[]);
+  useEffect(()=>{if(selWf)loadWfDetail(selWf);else setWfDetail(null);},[selWf,days]);
+
+  const statCard=(label,value,sub,color='var(--accent)')=>(
+    <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px',minWidth:120,flex:1}}>
+      <div style={{fontSize:10,color:'var(--t3)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>{label}</div>
+      <div style={{fontSize:24,fontWeight:800,color,lineHeight:1}}>{value??'—'}</div>
+      {sub&&<div style={{fontSize:11,color:'var(--t3)',marginTop:4}}>{sub}</div>}
+    </div>
+  );
+
+  const MiniChart=({data,field,color})=>{
+    const max=Math.max(...data.map(d=>d[field]||0),1);
+    return <div style={{display:'flex',alignItems:'flex-end',gap:2,height:48}}>
+      {data.map((d,i)=>(
+        <div key={i} title={`${d.date}: ${d[field]}`}
+          style={{flex:1,minWidth:2,height:`${Math.round((d[field]||0)/max*44)+2}px`,
+            background:color||'var(--accent)',borderRadius:'2px 2px 0 0',opacity:.85}}/>
+      ))}
+    </div>;
+  };
+
+  if(loading&&!summary) return <div className="loading">⏳ Loading metrics…</div>;
+
+  const sr=summary?.success_rate_pct??0;
+  const srColor=sr>=90?'var(--green)':sr>=70?'#ffb020':'var(--red)';
+
+  return <div className="page-content">
+    {/* Header + period selector */}
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:18}}>
+      <h2 style={{fontSize:22,fontWeight:800,color:'var(--t1)',letterSpacing:'-.4px'}}>Execution Metrics</h2>
+      <div style={{display:'flex',gap:6}}>
+        {[7,14,30,90].map(d=>(
+          <button key={d} className={`btn ${days===d?'btn-primary':'btn-ghost'} btn-sm`}
+            onClick={()=>{setDays(d);load(d);}}>{d}d</button>
+        ))}
+      </div>
+    </div>
+
+    {summary&&<>
+      {/* KPI cards */}
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:18}}>
+        {statCard('Total Runs', summary.total_runs, `Last ${days} days`)}
+        {statCard('Success Rate', summary.success_rate_pct!=null?`${summary.success_rate_pct}%`:'—',
+          `${summary.success_runs} ok / ${summary.failed_runs} failed`, srColor)}
+        {statCard('Avg Duration', summary.avg_duration_s!=null?`${summary.avg_duration_s}s`:'—',
+          summary.p95_duration_s?`p95: ${summary.p95_duration_s}s`:null)}
+        {statCard('Workflows', summary.total_workflows, 'active')}
+        {statCard('Scheduled', summary.scheduled_runs, `Manual: ${summary.manual_runs}`, 'var(--purple)')}
+      </div>
+
+      {/* Trend charts */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:18}}>
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px'}}>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:10,color:'var(--t2)'}}>✅ Successful runs / day</div>
+          <MiniChart data={trend} field="success" color="var(--green)"/>
+          <div style={{display:'flex',justifyContent:'space-between',marginTop:4,fontSize:10,color:'var(--t3)'}}>
+            <span>{trend[0]?.date}</span><span>{trend[trend.length-1]?.date}</span>
+          </div>
+        </div>
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px'}}>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:10,color:'var(--t2)'}}>❌ Failed runs / day</div>
+          <MiniChart data={trend} field="failed" color="var(--red)"/>
+          <div style={{display:'flex',justifyContent:'space-between',marginTop:4,fontSize:10,color:'var(--t3)'}}>
+            <span>{trend[0]?.date}</span><span>{trend[trend.length-1]?.date}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottleneck panels */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,marginBottom:18}}>
+        {/* Slowest nodes */}
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px'}}>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:10,color:'var(--t2)'}}>~ Slowest Nodes (avg)</div>
+          {nodes.slowest.length===0
+            ? <div style={{color:'var(--t3)',fontSize:13}}>No execution data yet.</div>
+            : nodes.slowest.slice(0,8).map(n=>{
+                const maxAvg=Math.max(...nodes.slowest.map(x=>x.avg_duration_s||0),1);
+                return <div key={n.node_key} style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:11,color:'var(--t1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{n.node_title}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:5,marginTop:2}}>
+                      <span style={{fontSize:9,fontFamily:'var(--mono)',color:'var(--accent)',minWidth:60}}>{n.node_type}</span>
+                      <div style={{flex:1,height:4,background:'var(--border)',borderRadius:2}}>
+                        <div style={{width:`${Math.round((n.avg_duration_s||0)/maxAvg*100)}%`,height:'100%',background:'var(--purple)',borderRadius:2}}/>
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{fontSize:11,color:'var(--t2)',fontFamily:'var(--mono)',marginLeft:10,whiteSpace:'nowrap'}}>{n.avg_duration_s}s</span>
+                </div>;
+              })
+          }
+        </div>
+        {/* Most failed nodes */}
+        <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px'}}>
+          <div style={{fontSize:12,fontWeight:700,marginBottom:10,color:'var(--t2)'}}>● Most Failed Nodes</div>
+          {nodes.most_failed.length===0
+            ? <div style={{color:'var(--t3)',fontSize:13}}>No failures ✓</div>
+            : nodes.most_failed.slice(0,8).map(n=>(
+              <div key={n.node_key} style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:11,color:'var(--t1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{n.node_title}</div>
+                  <span style={{fontSize:9,fontFamily:'var(--mono)',color:'var(--accent)'}}>{n.node_type}</span>
+                </div>
+                <div style={{textAlign:'right',marginLeft:10}}>
+                  <div style={{fontSize:12,fontWeight:700,color:'var(--red)'}}>{n.failed}×</div>
+                  <div style={{fontSize:9,color:'var(--t3)'}}>{n.failure_rate_pct}% fail</div>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      {/* Per-workflow table */}
+      {wfList.length>0&&<div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px',marginBottom:18}}>
+        <div style={{fontSize:12,fontWeight:700,marginBottom:12,color:'var(--t2)'}}>▤ All Workflows</div>
+        <div className="tbl-card">
+          <table>
+            <thead><tr><th>Workflow</th><th>Runs</th><th>Success %</th><th>Avg</th><th>Last Run</th><th>Status</th></tr></thead>
+            <tbody>
+              {wfList.map(w=>{
+                const src=w.success_rate_pct??0;
+                const sc=src>=90?'var(--green)':src>=70?'#ffb020':'var(--red)';
+                const statusColor={success:'var(--green)',failed:'var(--red)',running:'var(--accent)',pending:'var(--t3)'}[w.last_run_status]||'var(--t3)';
+                return <tr key={w.workflow_id} style={{cursor:'pointer'}} onClick={()=>setSelWf(w.workflow_id===selWf?'':w.workflow_id)}>
+                  <td style={{fontWeight:selWf===w.workflow_id?700:400}}>{w.workflow_name}</td>
+                  <td className="mono">{w.total_runs}</td>
+                  <td><span style={{color:sc,fontWeight:700}}>{w.success_rate_pct!=null?`${w.success_rate_pct}%`:'—'}</span></td>
+                  <td className="mono">{w.avg_duration_s!=null?`${w.avg_duration_s}s`:'—'}</td>
+                  <td className="mono" style={{fontSize:11,color:'var(--t3)'}}>{w.last_run_at?new Date(w.last_run_at).toLocaleDateString():'never'}</td>
+                  <td><span style={{fontSize:10,color:statusColor,fontFamily:'var(--mono)'}}>{w.last_run_status||'—'}</span></td>
+                </tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>}
+    </>}
+
+    {/* Per-workflow drill-down */}
+    <div style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:10,padding:'14px 18px'}}>
+      <div style={{fontSize:12,fontWeight:700,marginBottom:12,color:'var(--t2)'}}>⊙ Workflow Drill-down</div>
+      <select className="sel" style={{maxWidth:360,marginBottom:12}} value={selWf} onChange={e=>setSelWf(e.target.value)}>
+        <option value="">— Click a row above or select —</option>
+        {workflows.map(w=><option key={w.id} value={w.id}>{w.name}</option>)}
+      </select>
+      {wfDetail&&<>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:14}}>
+          {statCard('Runs',wfDetail.total_runs,`${days}d`)}
+          {statCard('Success',wfDetail.success_rate_pct!=null?`${wfDetail.success_rate_pct}%`:'—','rate',
+            (wfDetail.success_rate_pct??0)>=90?'var(--green)':(wfDetail.success_rate_pct??0)>=70?'#ffb020':'var(--red)')}
+          {statCard('Avg',wfDetail.avg_duration_s!=null?`${wfDetail.avg_duration_s}s`:'—','duration')}
+        </div>
+        {wfDetail.node_stats?.length>0&&<>
+          <div style={{fontSize:11,color:'var(--t3)',fontWeight:700,marginBottom:6}}>Node breakdown</div>
+          <div className="tbl-card">
+            <table>
+              <thead><tr><th>Node</th><th>Type</th><th>Runs</th><th>Fail%</th><th>Avg</th><th>p95</th></tr></thead>
+              <tbody>
+                {wfDetail.node_stats.map(n=>(
+                  <tr key={n.title}>
+                    <td>{n.title}</td>
+                    <td><span style={{fontSize:10,fontFamily:'var(--mono)',color:'var(--accent)'}}>{n.type}</span></td>
+                    <td className="mono">{n.runs}</td>
+                    <td><span style={{color:n.failure_pct>20?'var(--red)':n.failure_pct>0?'#ffb020':'var(--green)'}}>{n.failure_pct}%</span></td>
+                    <td className="mono">{n.avg_duration_s!=null?`${n.avg_duration_s}s`:'—'}</td>
+                    <td className="mono">{n.p95_duration_s!=null?`${n.p95_duration_s}s`:'—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>}
+        {wfDetail.recent_runs?.length>0&&<>
+          <div style={{fontSize:11,color:'var(--t3)',fontWeight:700,margin:'12px 0 6px'}}>Recent runs</div>
+          <div style={{display:'flex',flexDirection:'column',gap:4}}>
+            {wfDetail.recent_runs.map(r=>{
+              const rc={success:'var(--green)',failed:'var(--red)',running:'var(--accent)',pending:'var(--t3)'}[r.status]||'var(--t3)';
+              return <div key={r.id} style={{display:'flex',alignItems:'center',gap:12,padding:'6px 10px',background:'var(--surface2)',borderRadius:6,fontSize:12}}>
+                <span style={{color:rc,fontWeight:700,minWidth:60}}>{r.status}</span>
+                <span className="mono" style={{fontSize:10,color:'var(--t3)'}}>{r.id}</span>
+                <span style={{color:'var(--t3)',fontSize:11}}>{r.triggered_by}</span>
+                <span style={{marginLeft:'auto',fontFamily:'var(--mono)',fontSize:11}}>{r.duration_s!=null?`${r.duration_s}s`:''}</span>
+                <span style={{color:'var(--t3)',fontSize:10}}>{r.started_at?new Date(r.started_at).toLocaleString():''}</span>
+              </div>;
+            })}
+          </div>
+        </>}
+      </>}
+    </div>
+  </div>;
+}
+
+/* ── Templates Page ── */
+function TemplatesPage({api,addToast,onOpenWorkflow,setPage}){
+  const [templates,setTemplates]=useState([]);
+  const [loading,setLoading]=useState(true);
+  const [catFilter,setCatFilter]=useState('');
+  const [cplFilter,setCplFilter]=useState('');
+  const [search,setSearch]=useState('');
+  const [cloning,setCloning]=useState(null);
+  const [preview,setPreview]=useState(null);
+
+  useEffect(()=>{
+    fetch('/api/templates/').then(r=>r.json()).then(d=>{setTemplates(d.templates||[]);setLoading(false);}).catch(()=>setLoading(false));
+  },[]);
+
+  const clone=async(tplId,tplName)=>{
+    setCloning(tplId);
+    try{
+      const d=await api(`/templates/${tplId}/clone`,{method:'POST',body:JSON.stringify({name:tplName})});
+      addToast('success',`"${d.workflow_name}" cloned! Opening in editor…`);
+      // Open in workflow editor
+      if(onOpenWorkflow&&d.workflow_id){
+        const wf=await api(`/workflows/${d.workflow_id}`);
+        onOpenWorkflow(wf);
+        setPage('workflow');
+      }
+    }catch(e){addToast('error',`Clone failed: ${e.message}`);}
+    finally{setCloning(null);}
+  };
+
+  const cats=[...new Set(templates.map(t=>t.category))].sort();
+  const cplx=['simple','medium','complex'];
+  const cplxColor={simple:'var(--green)',medium:'#ffb020',complex:'var(--red)'};
+  const catColor={
+    'data-engineering':'var(--accent)',
+    'data-quality':'var(--green)',
+    'monitoring':'var(--purple)',
+    'storage':'#ffb020',
+    'integration':'var(--t2)',
+    'reporting':'#4adeaa',
+    'resilience':'var(--red)',
+  };
+
+  const filtered=templates.filter(t=>{
+    if(catFilter&&t.category!==catFilter) return false;
+    if(cplFilter&&t.complexity!==cplFilter) return false;
+    if(search&&!t.name.toLowerCase().includes(search.toLowerCase())&&!t.description.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  if(loading) return <div className="loading">⏳ Loading templates…</div>;
+
+  return <div className="page-content">
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+      <div>
+        <h2 style={{fontSize:22,fontWeight:800,color:'var(--t1)',letterSpacing:'-.4px'}}>Workflow Templates</h2>
+        <p style={{fontSize:13,color:'var(--t3)',marginTop:3}}>Production-ready workflows. Clone to editor and configure credentials.</p>
+      </div>
+    </div>
+    <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+      <input className="filter-inp" placeholder="⊙ Search…" value={search} onChange={e=>setSearch(e.target.value)} style={{maxWidth:220}}/>
+      <select className="sel" style={{maxWidth:180}} value={catFilter} onChange={e=>setCatFilter(e.target.value)}>
+        <option value="">All categories</option>
+        {cats.map(c=><option key={c}>{c}</option>)}
+      </select>
+      <select className="sel" style={{maxWidth:150}} value={cplFilter} onChange={e=>setCplFilter(e.target.value)}>
+        <option value="">All complexity</option>
+        {cplx.map(c=><option key={c}>{c}</option>)}
+      </select>
+      {(catFilter||cplFilter||search)&&<button className="btn btn-ghost btn-sm" onClick={()=>{setCatFilter('');setCplFilter('');setSearch('');}}>✕ Clear</button>}
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(320px,1fr))',gap:14}}>
+      {filtered.map(t=>(
+        <div key={t.id} style={{background:'var(--surface)',border:'1px solid var(--border)',borderRadius:12,padding:'16px 18px',display:'flex',flexDirection:'column',gap:10}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+            <div>
+              <div style={{fontWeight:700,fontSize:14,marginBottom:4}}>{t.name}</div>
+              <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                <span style={{fontSize:10,padding:'2px 7px',borderRadius:4,background:`${catColor[t.category]||'var(--accent)'}22`,color:catColor[t.category]||'var(--accent)',border:`1px solid ${catColor[t.category]||'var(--accent)'}44`}}>{t.category}</span>
+                <span style={{fontSize:10,padding:'2px 7px',borderRadius:4,background:`${cplxColor[t.complexity]}22`,color:cplxColor[t.complexity]}}>{t.complexity}</span>
+                <span style={{fontSize:10,color:'var(--t3)'}}>{t.node_count} nodes</span>
+              </div>
+            </div>
+          </div>
+          <div style={{fontSize:12,color:'var(--t2)',lineHeight:1.5}}>{t.description}</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+            {t.node_types.map(nt=><span key={nt} style={{fontSize:10,fontFamily:'var(--mono)',padding:'1px 6px',borderRadius:4,background:'rgba(255,255,255,.04)',border:'1px solid var(--border)',color:'var(--t3)'}}>{nt}</span>)}
+          </div>
+          <div style={{display:'flex',gap:7,marginTop:4}}>
+            <button className="btn btn-ghost btn-sm" onClick={()=>setPreview(t)}>· Preview</button>
+            <button className="btn btn-primary btn-sm" style={{flex:1}} disabled={cloning===t.id} onClick={()=>clone(t.id,t.name)}>
+              {cloning===t.id?'Cloning…':'Use Template →'}
+            </button>
+          </div>
+        </div>
+      ))}
+      {filtered.length===0&&<div style={{gridColumn:'1/-1',textAlign:'center',padding:40,color:'var(--t3)'}}>No templates match your filters.</div>}
+    </div>
+
+    {preview&&(
+      <div className="overlay" onClick={e=>e.target===e.currentTarget&&setPreview(null)}>
+        <div className="modal" style={{maxWidth:540}}>
+          <div className="mhdr">
+            <div className="mtitle">{preview.name}</div>
+            <button className="mclose" onClick={()=>setPreview(null)}>×</button>
+          </div>
+          <div className="mbody">
+            <p style={{fontSize:13,color:'var(--t2)',marginBottom:12}}>{preview.description}</p>
+            <div style={{fontSize:11,fontWeight:700,color:'var(--t3)',textTransform:'uppercase',letterSpacing:'1px',marginBottom:8}}>Node Pipeline</div>
+            <div style={{display:'flex',flexDirection:'column',gap:5}}>
+              {(preview.dsl?.nodes||[]).map((n,i)=>{
+                const cfg=NC[n.type]||NC.trigger;
+                return <div key={n.id} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 10px',background:'var(--surface2)',borderRadius:7,border:`1px solid ${cfg.bd}33`}}>
+                  <span style={{fontSize:14}}>{cfg.icon}</span>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700}}>{n.title}</div>
+                    <div style={{fontSize:10,color:'var(--t3)',fontFamily:'var(--mono)'}}>{n.type}</div>
+                  </div>
+                </div>;
+              })}
+            </div>
+          </div>
+          <div className="mfoot">
+            <button className="btn btn-ghost" onClick={()=>setPreview(null)}>Close</button>
+            <button className="btn btn-primary" disabled={cloning===preview.id} onClick={()=>{setPreview(null);clone(preview.id,preview.name);}}>
+              {cloning===preview.id?'Cloning…':'Use This Template →'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>;
+}
+
+/* ── App Shell ── */
+function App(){
+  const [token,setToken]=useState(null);
+  const [user,setUser]=useState(null);
+  const [page,setPage]=useState('chat');
+  const [currentWf,setCurrentWf]=useState(null);
+  const [workflows,setWorkflows]=useState([]);
+  const [toasts,setToasts]=useState([]);
+
+  const addToast=useCallback((type,msg)=>{
+    const id=Date.now();
+    setToasts(t=>[...t,{id,type,msg}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4000);
+  },[]);
+
+  const api=token?makeApi(token):null;
+
+  const onLogin=(tok,usr)=>{setToken(tok);setUser(usr);};
+
+  const loadWorkflows=useCallback(async()=>{
+    if(!api) return;
+    try{const d=await api('/workflows');setWorkflows(d.workflows||[]);}
+    catch(e){/* silent */}
+  },[token]);
+
+  useEffect(()=>{if(token) loadWorkflows();},[token]);
+
+  const openWorkflow=async(wf)=>{
+    if(!api) return;
+    try{
+      // List endpoint omits dsl — fetch full record so nodes/edges are present
+      const full = (wf.dsl || wf.nodes) ? wf : await api('/workflows/'+wf.id);
+      setCurrentWf(full);setPage('workflow');
+    }catch(e){
+      setCurrentWf(wf);setPage('workflow');
+    }
+  };
+
+  if(!token) return <LoginPage onLogin={onLogin}/>;
+
+  const navItems=[
+    {id:'chat',icon:'◻',label:'AI Chat'},
+    {id:'workflow',icon:'◈',label:'Workflow Editor'},
+    {id:'history',icon:'◷',label:'Executions'},
+    {id:'metrics',icon:'▦',label:'Metrics'},
+    {id:'templates',icon:'⊞',label:'Templates'},
+    {id:'variables',icon:'≔',label:'Variables'},
+    {id:'credentials',icon:'◉',label:'Credentials'},
+  ];
+
+  const topTitles={
+    chat:'AI Chat',
+    workflow:`${currentWf?.name||'Workflow Editor'}`,
+    history:'Execution History',
+    metrics:'Metrics',
+    templates:'Templates',
+    variables:'Variables',
+    credentials:'Credentials',
+  };
+
+  const initials=(user?.email||'U').slice(0,2).toUpperCase();
+
+  return <>
+    <div className="shell">
+      <div className="sidebar">
+        <div className="logo-wrap">
+          <div className="logo-mark">FF</div>
+          <div>
+            <div className="logo-text">FlowForge</div>
+            <div style={{fontSize:10,color:'var(--t3)',fontFamily:'var(--mono)',marginTop:2,letterSpacing:'.2px'}}>v4 · automation</div>
+          </div>
+        </div>
+        <div className="nav">
+          <div className="nav-sec">Navigation</div>
+          {navItems.map(n=>(
+            <div key={n.id} className={`nav-item ${page===n.id?'active':''}`} onClick={()=>setPage(n.id)}>
+              <span className="nav-icon">{n.icon}</span><span>{n.label}</span>
+            </div>
+          ))}
+          {workflows.length>0&&<>
+            <div className="nav-sec" style={{marginTop:8}}>Workflows</div>
+            {workflows.map(w=>(
+              <div key={w.id} className="nav-item" onClick={()=>openWorkflow(w)} style={{paddingLeft:16}}>
+                <span className="nav-icon" style={{fontSize:11,opacity:.5}}>◈</span>
+                <span style={{fontSize:12,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',color:'var(--t2)'}}>{w.name}</span>
+              </div>
+            ))}
+          </>}
+        </div>
+        <div className="sidebar-bot">
+          <div className="user-chip" onClick={()=>{if(confirm('Sign out?')){setToken(null);setUser(null);setWorkflows([]);}}}>
+            <div className="user-av">{initials}</div>
+            <div>
+              <div className="user-name">{user?.email?.split('@')[0]||'User'}</div>
+              <div className="user-role">click to sign out</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="main">
+        <div className="topbar">
+          <div style={{display:'flex',alignItems:'center',gap:8,flex:1}}>
+            <span style={{color:'var(--t3)',fontSize:12}}>FlowForge</span>
+            <span style={{color:'var(--t3)',fontSize:12}}>›</span>
+            <span style={{fontSize:13.5,fontWeight:600,color:'var(--t1)',letterSpacing:'-.2px'}}>{topTitles[page]}</span>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            {page==='history'&&<button className="btn btn-ghost btn-sm" onClick={()=>setPage('history')}>↺ Refresh</button>}
+            <button className="btn btn-ghost btn-sm" onClick={()=>window.open('/api/health','_blank')}>Health</button>
+          </div>
+        </div>
+        <div className="page">
+          {page==='chat'    &&<ChatPage api={api} addToast={addToast} onOpenWorkflow={openWorkflow} loadWorkflows={loadWorkflows}/>}
+          {page==='workflow'&&<WorkflowPage key={currentWf?.id||(currentWf?._ts||'new')} api={api} initialWorkflow={currentWf} addToast={addToast} token={token} workflows={workflows}/>}
+          {page==='history' &&<HistoryPage api={api} addToast={addToast} workflows={workflows}/>}
+          {page==='metrics' &&<MetricsPage api={api} addToast={addToast} workflows={workflows}/>}
+          {page==='templates'&&<TemplatesPage api={api} addToast={addToast} onOpenWorkflow={openWorkflow} setPage={setPage}/>}
+          {page==='variables'&&<VariablesPage api={api} addToast={addToast} workflows={workflows}/>}
+          {page==='credentials'&&<CredentialsPage api={api} addToast={addToast}/>}
+        </div>
+      </div>
+    </div>
+    <Toast toasts={toasts}/>
+  </>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

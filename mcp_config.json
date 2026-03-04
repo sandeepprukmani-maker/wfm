@@ -1,0 +1,96 @@
+{
+  "_readme": [
+    "FlowForge MCP Server Configuration",
+    "",
+    "Each server below is a standalone MCP server you can connect to any",
+    "MCP-compatible client (Claude Desktop, Cursor, Zed, Continue, VS Code",
+    "extensions, custom MCP clients, etc.).",
+    "",
+    "HOW TO USE:",
+    "  1. Replace /path/to/flowforge with the actual path to this folder",
+    "  2. Fill in your real credentials for each service you use",
+    "  3. Add only the servers you need — unused ones can be removed",
+    "  4. Point your MCP client at this file (or paste the relevant block)",
+    "",
+    "CLIENT-SPECIFIC LOCATIONS:",
+    "  Claude Desktop (macOS):  ~/Library/Application Support/Claude/claude_desktop_config.json",
+    "  Claude Desktop (Windows): %APPDATA%\\Claude\\claude_desktop_config.json",
+    "  Cursor:  .cursor/mcp.json  (project) or ~/.cursor/mcp.json (global)",
+    "  Zed:     ~/.config/zed/settings.json  (under the 'context_servers' key)",
+    "  Continue: ~/.continue/config.json  (under 'mcpServers')",
+    "  VS Code (Copilot): .vscode/mcp.json",
+    "  Other clients: consult your client's MCP documentation"
+  ],
+
+  "mcpServers": {
+
+    "flowforge-airflow": {
+      "_description": "Query Airflow DAGs, runs, task states and logs",
+      "command": "python",
+      "args": ["-m", "mcp_servers.airflow_server"],
+      "cwd": "/path/to/flowforge/backend",
+      "env": {
+        "AIRFLOW_BASE_URL": "http://your-airflow-host:8080",
+        "AIRFLOW_USERNAME": "admin",
+        "AIRFLOW_PASSWORD": "your-password"
+      }
+    },
+
+    "flowforge-sql": {
+      "_description": "Query SQL Server — row counts, table data, schema inspection",
+      "command": "python",
+      "args": ["-m", "mcp_servers.sql_server"],
+      "cwd": "/path/to/flowforge/backend",
+      "env": {
+        "MSSQL_CONNECTION_STRING": "Driver={ODBC Driver 17 for SQL Server};SERVER=your-server;DATABASE=your-db;UID=your-user;PWD=your-password;"
+      }
+    },
+
+    "flowforge-http": {
+      "_description": "Make HTTP requests and check API health",
+      "command": "python",
+      "args": ["-m", "mcp_servers.http_server"],
+      "cwd": "/path/to/flowforge/backend",
+      "env": {
+        "HTTP_BASE_URL": "https://api.example.com",
+        "HTTP_BEARER_TOKEN": "your-token-here"
+      }
+    },
+
+    "flowforge-s3": {
+      "_description": "Browse S3 buckets, check file existence, list objects",
+      "command": "python",
+      "args": ["-m", "mcp_servers.s3_server"],
+      "cwd": "/path/to/flowforge/backend",
+      "env": {
+        "AWS_ACCESS_KEY_ID": "AKIA...",
+        "AWS_SECRET_ACCESS_KEY": "your-secret",
+        "AWS_DEFAULT_REGION": "us-east-1"
+      }
+    },
+
+    "flowforge-azure": {
+      "_description": "Browse Azure Blob Storage containers and blobs",
+      "command": "python",
+      "args": ["-m", "mcp_servers.azure_server"],
+      "cwd": "/path/to/flowforge/backend",
+      "env": {
+        "AZURE_CONNECTION_STRING": "DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net"
+      }
+    },
+
+    "flowforge-sftp": {
+      "_description": "Browse SFTP directories and check file existence",
+      "command": "python",
+      "args": ["-m", "mcp_servers.sftp_server"],
+      "cwd": "/path/to/flowforge/backend",
+      "env": {
+        "SFTP_HOST": "your-sftp-host",
+        "SFTP_USERNAME": "your-username",
+        "SFTP_PASSWORD": "your-password",
+        "SFTP_PORT": "22"
+      }
+    }
+
+  }
+}
